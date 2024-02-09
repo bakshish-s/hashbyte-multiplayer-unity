@@ -1,0 +1,16 @@
+{
+    "name": "com.hashbytestudio.unitymultiplayer",
+    "version": "1.0.0",
+    "displayName": "Hashbyte Multiplayer - Unity Services",
+    "description": "A custom implementation of Unity Services to create multiplayer using, Relay, Lobby and UTP",
+    "unity": "2022.3.1f1",
+    "author": {
+        "name": "Hashbyte Studios Pvt Ltd",
+        "email": "bakshish@hashbytestudio.com",
+        "url": "https://www.hashbytestudio.com"
+    },
+    "dependencies": {
+        "lobby": "1.1.2",
+        "relay": "1.0.5"
+    }
+}
