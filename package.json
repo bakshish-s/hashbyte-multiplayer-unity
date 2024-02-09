@@ -12,5 +12,12 @@
     "dependencies": {
         "com.unity.services.lobby": "1.1.2",
         "com.unity.services.relay": "1.0.5"
-    }
+    },
+    "samples":[
+        {
+            "displayName": "Simple Turn based",
+            "description": "A simple turn based multiplayer example",
+            "path": "Samples~/SimpleTurnBased"
+        }
+    ]
 }
