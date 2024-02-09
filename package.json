@@ -10,7 +10,7 @@
         "url": "https://www.hashbytestudio.com"
     },
     "dependencies": {
-        "lobby": "1.1.2",
-        "relay": "1.0.5"
+        "com.unity.services.lobby": "1.1.2",
+        "com.unity.services.relay": "1.0.5"
     }
 }
