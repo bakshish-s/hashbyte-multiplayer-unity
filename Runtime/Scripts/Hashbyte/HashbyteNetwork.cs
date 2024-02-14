@@ -55,8 +55,8 @@ namespace Hashbyte.Multiplayer
                 await InitializeAsync(ServiceType.UNITY);    //If not initialized by client, consider Unity Service by default
             }
             //After initialization succesfull, try to join a game if available
-            string roomId = await multiplayerService.JoinRandomGame();
-            if(string.IsNullOrEmpty(roomId))
+            IRoomResponse response = await multiplayerService.JoinRandomGame();            
+            if(string.IsNullOrEmpty(response.RoomId))
             {
                 Debug.Log("Error joining game. Get details in OnError event if subscribed");
                 OnError?.Invoke();

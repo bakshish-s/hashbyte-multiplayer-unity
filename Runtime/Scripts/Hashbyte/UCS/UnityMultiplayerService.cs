@@ -20,12 +20,18 @@ namespace Hashbyte.Multiplayer
             await authService.Authenticate();
         }
 
-        public override async Task<string> JoinRandomGame()
+        public override async Task<IRoomResponse> JoinRandomGame()
         {
             if (!isInitialized) await Initialize();
-            string roomId = await roomService.JoinRandomRoom();
-            networkService.ConnectToServer();
-            return roomId;                        
+            UnityRoomResponse roomResponse = (UnityRoomResponse)(await roomService.JoinRandomRoom());
+            networkService = roomResponse.isHost ? new UnityHostNetService() : new UnityClientNetService();
+            UnityConnectSettings connectSettings = new UnityConnectSettings()
+            {
+                ConnectionType = "udp",
+                roomResponse = roomResponse
+            };
+            networkService.ConnectToServer(connectSettings);
+            return roomResponse;                        
         }
 
         public override void Update()

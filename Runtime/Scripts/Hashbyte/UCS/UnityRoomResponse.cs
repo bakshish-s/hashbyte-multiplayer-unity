@@ -4,13 +4,13 @@ namespace Hashbyte.Multiplayer
 {
     public class UnityRoomResponse : IRoomResponse
     {
-        public string RoomId { get; }
+        public string RoomId { get; set; }
 
-        public bool Success { get; }
+        public bool Success { get; set; }
 
-        public RoomError Error { get; }
+        public RoomError Error { get; set; }
 
-        public bool isHost { get; }
+        public bool isHost { get; set; }
         public Allocation hostAllocation;
         public JoinAllocation clientAllocation;
     }

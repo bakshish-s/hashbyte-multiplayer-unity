@@ -14,7 +14,7 @@ namespace Hashbyte.Multiplayer
         /// Joins any game available
         /// </summary>
         /// <returns>Returns room code if a game is joined or empty string if not available</returns>
-        public abstract Task<string> JoinRandomGame();
+        public abstract Task<IRoomResponse> JoinRandomGame();
         //Start calling update as soon as Multiplayer service is initialized
         public abstract void Update();
         public void CreatePrivateGame() { }
