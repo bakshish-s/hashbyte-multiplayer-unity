@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 
 namespace Hashbyte.Multiplayer
@@ -29,17 +28,16 @@ namespace Hashbyte.Multiplayer
 
         public async Task InitializeAsync(ServiceType serviceType)
         {
-            if(isInitializing) return;
+            Debug.Log($"Is Initialized {IsInitialized} or initializing {isInitializing}");
+            if (isInitializing) return;
             if (IsInitialized) { OnInitialized?.Invoke(); return; }
+            Debug.Log($"Initializing started");
             isInitializing = true;
-            switch (serviceType)
-            {
-                case ServiceType.UNITY:
-                    multiplayerService = new UnityMultiplayerService();
-                    break;
-            }
+            multiplayerService = new MultiplayerService(serviceType);
             await multiplayerService.Initialize();
+            Debug.Log($"Internal intialization done");
             OnInitialized?.Invoke();
+            IsInitialized = true;
             IsInitialized = false;
         }
 
@@ -55,8 +53,8 @@ namespace Hashbyte.Multiplayer
                 await InitializeAsync(ServiceType.UNITY);    //If not initialized by client, consider Unity Service by default
             }
             //After initialization succesfull, try to join a game if available
-            IRoomResponse response = await multiplayerService.JoinRandomGame();            
-            if(string.IsNullOrEmpty(response.RoomId))
+            IRoomResponse response = await multiplayerService.JoinRandomGame();
+            if (string.IsNullOrEmpty(response.RoomId))
             {
                 Debug.Log("Error joining game. Get details in OnError event if subscribed");
                 OnError?.Invoke();
@@ -65,7 +63,7 @@ namespace Hashbyte.Multiplayer
             {
                 OnJoinedRoom?.Invoke();
             }
-        }        
+        }
 
         public void CreatePrivateGame()
         {
@@ -80,6 +78,10 @@ namespace Hashbyte.Multiplayer
         public void Update()
         {
             multiplayerService?.Update();
+        }
+        public void Dispose()
+        {
+            multiplayerService?.Dispose();
         }
     }
 }

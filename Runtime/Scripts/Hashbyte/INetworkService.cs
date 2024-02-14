@@ -4,5 +4,6 @@ namespace Hashbyte.Multiplayer
     {        
         public bool ConnectToServer(IConnectSettings connectSettings);
         public void NetworkUpdate();
+        public void Dispose();
     }
 }

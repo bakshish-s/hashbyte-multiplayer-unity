@@ -66,7 +66,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public async Task<string> JoinLobby(string lobbyId, object additionalData)
-        {
+        {            
             Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
             return lobby == null ? "" : lobby.Data[Constants.kRoomId].Value;
         }

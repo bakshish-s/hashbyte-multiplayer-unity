@@ -1,6 +1,4 @@
 using Hashbyte.Multiplayer;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MenuController : MonoBehaviour
@@ -20,6 +18,7 @@ public class MenuController : MonoBehaviour
 
     private void OnMultiplayerInitialized()
     {
+        Hashbyte.Multiplayer.Debug.Log("Initialization complete");
         HashbyteNetwork.Instance.OnInitialized -= OnMultiplayerInitialized;         //Unsubscribe as initialization happens only once during game launch
     }       
 
@@ -35,5 +34,10 @@ public class MenuController : MonoBehaviour
     private void Update()
     {
         HashbyteNetwork.Instance.Update();
+    }
+
+    private void OnDestroy()
+    {
+        HashbyteNetwork.Instance.Dispose();
     }
 }

@@ -5,8 +5,9 @@ namespace Hashbyte.Multiplayer
         public string RoomId { get; }
         public bool Success { get; }
         public RoomError Error { get; }
-    }
+        public bool isHost { get; }
 
+    }
     public struct RoomError
     {
         public int ErrorCode;
