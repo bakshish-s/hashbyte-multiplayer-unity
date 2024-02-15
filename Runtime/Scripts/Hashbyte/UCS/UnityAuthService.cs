@@ -13,6 +13,7 @@ public class UnityAuthService : IAuthService
         //Initialize unity services
         await UnityServices.InitializeAsync();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Debug.Log($"User authenticated with ID {AuthenticationService.Instance.PlayerId}");
         IsInitialized = true;
     }
 

@@ -13,9 +13,12 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> CreateRoom(bool isPrivate)
         {
+            Debug.Log($"Creating new room");
             roomResponse = new UnityRoomResponse();
-            string sessionId = await CreateRelaySession(null);
+            string sessionId = await CreateRelaySession(Constants.kRegionForServer);
+            Debug.Log($"Relay Session created {sessionId}");
             await CreateLobby(sessionId, Constants.kMaxPlayers, sessionId);
+            Debug.Log($"New lobby created");
             roomResponse.RoomId = sessionId;
             roomResponse.Success = true;
             return roomResponse;
@@ -23,8 +26,9 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> JoinRandomRoom()
         {
+            Debug.Log($"Joining random room ");
             string roomId = await JoinLobby("", "");
-            if(string.IsNullOrEmpty(roomId))
+            if (string.IsNullOrEmpty(roomId))
             {
                 return await CreateRoom(false);
             }
@@ -66,9 +70,17 @@ namespace Hashbyte.Multiplayer
         }
 
         public async Task<string> JoinLobby(string lobbyId, object additionalData)
-        {            
-            Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
-            return lobby == null ? "" : lobby.Data[Constants.kRoomId].Value;
+        {
+            try
+            {
+                Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
+                Debug.Log($"Lobby found {lobby}");
+                return lobby == null ? "" : lobby.Data[Constants.kRoomId].Value;
+            }catch (LobbyServiceException e)
+            {                
+                Debug.Log(e.Reason.ToString());   
+                return null;
+            }
         }
 
         public Task UpdateLobbyData(string lobbyId)

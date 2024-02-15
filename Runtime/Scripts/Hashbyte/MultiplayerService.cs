@@ -38,6 +38,7 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> JoinRandomGame()
         {
+            Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize();
             IRoomResponse roomResponse = await roomService.JoinRandomRoom();
             connectionSettings.Initialize(Constants.kConnectionType, roomResponse);

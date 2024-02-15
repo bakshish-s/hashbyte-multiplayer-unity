@@ -8,5 +8,6 @@ namespace Hashbyte.Multiplayer
         public const int kMaxPlayers = 2;
         public const string kInvalidCode = "~GB~";
         public const string kConnectionType = "udp";
+        public const string kRegionForServer = "asia-south1";
     }
 }

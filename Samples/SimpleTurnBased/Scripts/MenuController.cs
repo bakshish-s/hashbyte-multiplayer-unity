@@ -3,41 +3,34 @@ using UnityEngine;
 
 public class MenuController : MonoBehaviour
 {
+    public GameObject menuPanel, lobbyPanel, waitingPanel;
     // Start is called before the first frame update
     void Start()
-    {
-        HashbyteNetwork.Instance.OnInitialized += OnMultiplayerInitialized;
-        HashbyteNetwork.Instance.OnGameJoined += OnMultiplayerGameJoined;
-        if (!HashbyteNetwork.Instance.IsInitialized) HashbyteNetwork.Instance.Initialize(ServiceType.UNITY);
+    {                
+        HashbyteNetwork.Instance.OnJoinedRoom += OnMultiplayerRoomJoined;
     }
 
-    private void OnMultiplayerGameJoined(GameEvent gameEvent)
-    {
-        
+    private void OnMultiplayerRoomJoined()
+    {        
+        DeactivateAllPanels();
+        waitingPanel.SetActive(true);
     }
-
-    private void OnMultiplayerInitialized()
-    {
-        Hashbyte.Multiplayer.Debug.Log("Initialization complete");
-        HashbyteNetwork.Instance.OnInitialized -= OnMultiplayerInitialized;         //Unsubscribe as initialization happens only once during game launch
-    }       
 
     public async void GUI_StartGame()
     {
         //Initialize Multiplayer Services
         if (!HashbyteNetwork.Instance.IsInitialized) await HashbyteNetwork.Instance.InitializeAsync(ServiceType.UNITY);
+        DeactivateAllPanels();
+        lobbyPanel.SetActive(true);
         //Try to join a random game if available
         await HashbyteNetwork.Instance.JoinRandomGameAsync();
 
     }
 
-    private void Update()
+    private void DeactivateAllPanels()
     {
-        HashbyteNetwork.Instance.Update();
-    }
-
-    private void OnDestroy()
-    {
-        HashbyteNetwork.Instance.Dispose();
+        menuPanel.SetActive(false);
+        lobbyPanel.SetActive(false);
+        waitingPanel.SetActive(false);
     }
 }

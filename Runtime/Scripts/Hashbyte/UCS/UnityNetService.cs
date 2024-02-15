@@ -32,7 +32,7 @@ namespace Hashbyte.Multiplayer
                 connectionStatus = false;
             }
             else connectionStatus = (!(isHost && driver.Listen() != 0));
-            if(connectionStatus)
+            if (connectionStatus)
             {
                 if (isHost) serverConnections = new NativeList<NetworkConnection>();
                 else clientConnection = driver.Connect();
@@ -49,14 +49,14 @@ namespace Hashbyte.Multiplayer
 
         private void BaseUpdate()
         {
-            if (!driver.IsCreated || !driver.Bound) return;                        
+            if (!driver.IsCreated || !driver.Bound) return;
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
         }
 
         private void ClientUpdate()
         {
-            if(clientConnection == default(NetworkConnection)) return;
+            if (clientConnection == default(NetworkConnection)) return;
             while ((eventType = clientConnection.PopEvent(driver, out dataReader)) != NetworkEvent.Type.Empty)
             {
                 ParseEvent();
@@ -142,10 +142,11 @@ namespace Hashbyte.Multiplayer
 
         public void Dispose()
         {
-            serverConnections.Dispose();
-            driver.Dispose();
+            Debug.Log("Disposing");
+            if (serverConnections.IsCreated) serverConnections.Dispose();
+            if (driver.IsCreated) driver.Dispose();
             incomingConnection = default(NetworkConnection);
-            clientConnection = default(NetworkConnection) ;
+            clientConnection = default(NetworkConnection);
         }
     }
 }

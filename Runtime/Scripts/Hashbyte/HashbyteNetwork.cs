@@ -38,7 +38,7 @@ namespace Hashbyte.Multiplayer
             Debug.Log($"Internal intialization done");
             OnInitialized?.Invoke();
             IsInitialized = true;
-            IsInitialized = false;
+            isInitializing = false;
         }
 
         public async void JoinRandomGame()
@@ -48,6 +48,7 @@ namespace Hashbyte.Multiplayer
 
         public async Task JoinRandomGameAsync()
         {
+            Debug.Log($"Initialization status {IsInitialized}");
             if (!IsInitialized)
             {
                 await InitializeAsync(ServiceType.UNITY);    //If not initialized by client, consider Unity Service by default
