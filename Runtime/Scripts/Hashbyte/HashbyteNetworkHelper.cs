@@ -7,9 +7,20 @@ namespace Hashbyte.Multiplayer
     {
         public bool initializeOnStart;
         public ServiceType serviceType = ServiceType.UNITY;
+        public static HashbyteNetworkHelper Instance { get; private set; }
 
         private void Awake()
         {
+            if(Instance != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            else
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
             if (initializeOnStart) HashbyteNetwork.Instance.Initialize(serviceType);
         }        
 
