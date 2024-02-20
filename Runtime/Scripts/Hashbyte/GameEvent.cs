@@ -27,6 +27,7 @@ namespace Hashbyte.Multiplayer
         GAME_STARTED = 1,
         GAME_ENDED,
         GAME_MOVE,
+        END_TURN,
         GAME_ALIVE,
     }
 }

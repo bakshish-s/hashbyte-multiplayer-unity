@@ -1,24 +1,34 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
-using UnityEngine;
-
-public class UnityAuthService : IAuthService
+namespace Hashbyte.Multiplayer
 {
-    public bool IsInitialized {get; private set;}
-    public async Task Authenticate()
+    public class UnityAuthService : IAuthService
     {
-        //Initialize unity services
-        await UnityServices.InitializeAsync();
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        Debug.Log($"User authenticated with ID {AuthenticationService.Instance.PlayerId}");
-        IsInitialized = true;
-    }
+        public bool IsInitialized { get; private set; }
+        
+        public async Task Authenticate()
+        {            
+            //Initialize unity services
+            await UnityServices.InitializeAsync();
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            Debug.Log($"User authenticated with ID {AuthenticationService.Instance.PlayerId}");
+            IsInitialized = true;
+        }
 
-    public Task AuthenticateWith()
-    {
-        throw new System.NotImplementedException();
+        public async Task AuthenticateWith(INetworkPlayer networkPlayer)
+        {            
+            if (string.IsNullOrEmpty(networkPlayer.PlayerId))
+                await Authenticate();
+            else
+            {
+                InitializationOptions options = new InitializationOptions();
+                options.SetProfile(networkPlayer.PlayerId);
+                await UnityServices.InitializeAsync(options);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log($"User {options} authenticated with ID {AuthenticationService.Instance.PlayerId}");
+                IsInitialized = true;
+            }                
+        }
     }
 }

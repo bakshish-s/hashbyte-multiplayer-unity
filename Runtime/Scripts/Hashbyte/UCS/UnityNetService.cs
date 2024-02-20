@@ -1,27 +1,30 @@
-using System.IO;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+using UnityEditor.MemoryProfiler;
 namespace Hashbyte.Multiplayer
 {
     public class UnityNetService : INetworkService
     {
+        public bool IsHost { get; private set; }
+        public bool IsConnected { get; private set; }
         private NetworkDriver driver;
         private NativeList<NetworkConnection> serverConnections;
         private NetworkConnection clientConnection;
         private NetworkConnection incomingConnection;
         private NetworkEvent.Type eventType;
         private DataStreamReader dataReader;
-        private bool isHost;
+        private List<INetworkEvents> networkEventListeners;
 
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
             bool connectionStatus;
             if (!(connectSettings is UnityConnectSettings)) return false;
             UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
-            isHost = unityConnect.RoomResponse.isHost;
+            IsHost = unityConnect.RoomResponse.isHost;
             RelayServerData relayServerData;
-            if (isHost)
+            if (IsHost)
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
             else
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation, connectSettings.ConnectionType);
@@ -31,19 +34,32 @@ namespace Hashbyte.Multiplayer
                 //Failed to bind
                 connectionStatus = false;
             }
-            else connectionStatus = (!(isHost && driver.Listen() != 0));
+            else connectionStatus = (!(IsHost && driver.Listen() != 0));
             if (connectionStatus)
             {
-                if (isHost) serverConnections = new NativeList<NetworkConnection>();
-                else clientConnection = driver.Connect();
+                if (IsHost) serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
+                //else clientConnection = driver.Connect();
             }
+            if (!IsHost)
+            {
+                Debug.Log($"Asking Host to accept my connection {((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation}");
+                clientConnection = driver.Connect();
+            }
+            Debug.Log($"Client {connectionStatus} connection {clientConnection} ");
+            IsConnected = connectionStatus;
             return connectionStatus;
+        }
+
+        public void RegisterCallbacks(INetworkEvents networkEvents)
+        {
+            if (networkEventListeners == null) networkEventListeners = new List<INetworkEvents>();
+            networkEventListeners.Add(networkEvents);
         }
 
         public void NetworkUpdate()
         {
             BaseUpdate();
-            if (isHost) HostUpdate();
+            if (IsHost) HostUpdate();
             else ClientUpdate();
         }
 
@@ -60,7 +76,7 @@ namespace Hashbyte.Multiplayer
             while ((eventType = clientConnection.PopEvent(driver, out dataReader)) != NetworkEvent.Type.Empty)
             {
                 ParseEvent();
-            }
+            }            
         }
 
         private void HostUpdate()
@@ -98,6 +114,7 @@ namespace Hashbyte.Multiplayer
             {
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
+                foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnPlayerConnected();
             }
         }
 
@@ -115,6 +132,7 @@ namespace Hashbyte.Multiplayer
                 // Handle Connect events.
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
+                    foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnPlayerConnected();
                     break;
 
                 // Handle Disconnect events.
@@ -123,6 +141,14 @@ namespace Hashbyte.Multiplayer
                     clientConnection = default(NetworkConnection);
                     break;
             }
+        }
+        public void Dispose()
+        {
+            Debug.Log("Disposing");
+            if (serverConnections.IsCreated) serverConnections.Dispose();
+            if (driver.IsCreated) driver.Dispose();
+            incomingConnection = default(NetworkConnection);
+            clientConnection = default(NetworkConnection);
         }
 
         public virtual void ReceiveEvent(FixedString32Bytes eventData)
@@ -138,15 +164,34 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
+            //foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnGameMove(gameEvent);
         }
 
-        public void Dispose()
+        public void SendMove(GameEvent gameEvent)
         {
-            Debug.Log("Disposing");
-            if (serverConnections.IsCreated) serverConnections.Dispose();
-            if (driver.IsCreated) driver.Dispose();
-            incomingConnection = default(NetworkConnection);
-            clientConnection = default(NetworkConnection);
+            if (IsHost)
+            {
+                foreach(NetworkConnection connection in serverConnections)
+                {
+                    SendMoveToConnection(gameEvent, connection);
+                }
+            }
+            else
+            {
+                SendMoveToConnection(gameEvent, clientConnection);
+            }
+        }
+
+        private void SendMoveToConnection(GameEvent gameEvent, NetworkConnection connection)
+        {
+            if (driver.BeginSend(connection, out var writer) == 0)
+            {
+                FixedString32Bytes msg = $"{(int)gameEvent.eventType}:{gameEvent.data}";
+                // Send the message. Aside from FixedString32, many different types can be used.
+                writer.WriteFixedString32(msg);
+                Debug.Log($"Base Event Msg {msg}");
+                driver.EndSend(writer);
+            }
         }
     }
 }

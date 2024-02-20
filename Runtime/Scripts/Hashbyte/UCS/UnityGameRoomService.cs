@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -6,10 +7,29 @@ using Unity.Services.Relay.Models;
 
 namespace Hashbyte.Multiplayer
 {
-    public class UnityGameRoomService : IGameRoomService, IRelayService, ILobbyService
+    public class UnityGameRoomService : LobbyEventCallbacks, IGameRoomService, IRelayService, ILobbyService
     {
         public event IGameRoomService.RoomJoined OnRoomJoined;
         private UnityRoomResponse roomResponse;
+        private List<INetworkEvents> networkEventListeners;
+        public UnityGameRoomService()
+        {
+            PlayerJoined += OnPlayerJoined;
+        }
+
+        private void OnPlayerJoined(List<LobbyPlayerJoined> playersJoined)
+        {
+            foreach (INetworkEvents netEventListener in networkEventListeners)
+                foreach (LobbyPlayerJoined lobbyPlayer in playersJoined)
+                    netEventListener.OnPlayerJoined(/*lobbyPlayer.PlayerIndex, lobbyPlayer.Player.Id, ""*/);
+        }
+
+        public void RegisterCallbacks(INetworkEvents networkEvents)
+        {
+            Debug.Log("Initializing room call backs");
+            if (networkEventListeners == null) networkEventListeners = new List<INetworkEvents>();
+            networkEventListeners.Add(networkEvents);
+        }
 
         public async Task<IRoomResponse> CreateRoom(bool isPrivate)
         {
@@ -27,15 +47,28 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> JoinRandomRoom()
         {
             Debug.Log($"Joining random room ");
-            string roomId = await JoinLobby("", "");
-            if (string.IsNullOrEmpty(roomId))
+            try
             {
-                return await CreateRoom(false);
-            }
-            else
+                string roomId = await JoinLobby("", "");
+                if (string.IsNullOrEmpty(roomId))
+                {
+                    return await CreateRoom(false);
+                }
+                else
+                {
+                    roomResponse = new UnityRoomResponse();
+                    await JoinRelaySession(roomId);
+                    return roomResponse;
+                }
+            }catch(RelayServiceException exception)
             {
                 roomResponse = new UnityRoomResponse();
-                await JoinRelaySession(roomId);
+                roomResponse.Success=false;
+                roomResponse.Error = new RoomError()
+                {
+                    ErrorCode = exception.ErrorCode,
+                    Message = exception.Message,
+                };
                 return roomResponse;
             }
         }
@@ -55,18 +88,14 @@ namespace Hashbyte.Multiplayer
             roomResponse.RoomId = sessionId;
         }
 
-        public void UpdateRoomData(GameRoomData roomData)
-        {
-
-        }
-
         public async Task CreateLobby(string lobbyName, int maxPlayers, object additionalData)
         {
             CreateLobbyOptions options = new CreateLobbyOptions()
             {
-                Data = new System.Collections.Generic.Dictionary<string, DataObject> { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, additionalData.ToString()) } }
+                Data = new Dictionary<string, DataObject> { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, additionalData.ToString()) } }
             };
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, 2, options);
+            await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
         }
 
         public async Task<string> JoinLobby(string lobbyId, object additionalData)
@@ -76,9 +105,10 @@ namespace Hashbyte.Multiplayer
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
                 Debug.Log($"Lobby found {lobby}");
                 return lobby == null ? "" : lobby.Data[Constants.kRoomId].Value;
-            }catch (LobbyServiceException e)
-            {                
-                Debug.Log(e.Reason.ToString());   
+            }
+            catch (LobbyServiceException e)
+            {
+                Debug.Log(e.Reason.ToString());
                 return null;
             }
         }

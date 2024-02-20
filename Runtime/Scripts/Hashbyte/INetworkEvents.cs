@@ -2,11 +2,10 @@ namespace Hashbyte.Multiplayer
 {
     public interface INetworkEvents
     {
-        void OnSignIn(string playerId);
-        void OnGameSessionCreated(string sessionId);
-        void OnConnectedToServer();
-        void OnNetworkError(NetworkErrorCode code, string message);
-    }
+        public void OnPlayerJoined();
+        public void OnPlayerConnected();
+        public void OnNetworkMessage(GameEvent gameEvent);
+    }            
 
     public enum NetworkErrorCode
     {

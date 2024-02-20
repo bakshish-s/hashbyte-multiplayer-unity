@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05141be44bc034e4a8945cb752923eaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initializeOnStart: 1
+  initializeOnStart: 0
   serviceType: 0
 --- !u!1 &187613164
 GameObject:
@@ -1655,9 +1655,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3649fbfb602ef940abec9ed7173dc31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerId: bakshi
   menuPanel: {fileID: 1608139416}
   lobbyPanel: {fileID: 1000196100}
   waitingPanel: {fileID: 953268124}
+  playButton: {fileID: 246533538}
+  waitingMessage: {fileID: 1991187509}
 --- !u!1 &1846457326
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,7 +9,7 @@ namespace Hashbyte.Multiplayer
         public ServiceType serviceType = ServiceType.UNITY;
         public static HashbyteNetworkHelper Instance { get; private set; }
 
-        private void Awake()
+        private async void Awake()
         {
             if(Instance != null)
             {
@@ -21,18 +21,18 @@ namespace Hashbyte.Multiplayer
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
             }
-            if (initializeOnStart) HashbyteNetwork.Instance.Initialize(serviceType);
+            if (initializeOnStart) await MultiplayerService.Instance.Initialize(null);//HashbyteNetwork.Instance.Initialize(serviceType);
         }        
 
         // Update is called once per frame
         void Update()
         {
-            HashbyteNetwork.Instance.Update();
+            MultiplayerService.Instance.Update();
         }
 
         private void OnDestroy()
         {
-            HashbyteNetwork.Instance.Dispose();
+            MultiplayerService.Instance.Dispose();
         }
     }
 }

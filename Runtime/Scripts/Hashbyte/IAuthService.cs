@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
-
-public interface IAuthService
+namespace Hashbyte.Multiplayer
 {
-    public bool IsInitialized { get; }
-    public Task Authenticate();
-    //To be implemented later
-    public Task AuthenticateWith();
+    public interface IAuthService
+    {
+        public bool IsInitialized { get; }
+        public Task Authenticate();
+        //To be implemented later
+        public Task AuthenticateWith(INetworkPlayer networkPlayer);
+    }
 }
