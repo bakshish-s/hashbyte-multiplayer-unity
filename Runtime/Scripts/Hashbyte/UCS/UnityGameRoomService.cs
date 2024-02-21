@@ -13,7 +13,7 @@ namespace Hashbyte.Multiplayer
     public class UnityGameRoomService : LobbyEventCallbacks, IGameRoomService, IRelayService, ILobbyService
     {
         private UnityRoomResponse roomResponse;
-        private List<INetworkEvents> networkEventListeners;        
+        private List<INetworkEvents> networkEventListeners;
 
         public UnityGameRoomService()
         {
@@ -25,10 +25,10 @@ namespace Hashbyte.Multiplayer
         {
             if (obj != null && obj.Count > 0)
             {
-                Hashtable roomProperties = new Hashtable(); 
+                Hashtable roomProperties = new Hashtable();
                 foreach (string key in obj.Keys)
                 {
-                    roomProperties.Add(key, obj[key].Value);  
+                    roomProperties.Add(key, obj[key].Value);
                     Debug.Log($"Data added {key} -- {obj[key].Value}");
                 }
                 foreach (INetworkEvents netEventListener in networkEventListeners)
@@ -52,7 +52,7 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
             string sessionId = await CreateRelaySession(Constants.kRegionForServer);
-            if(roomProperties == null) roomProperties = new Hashtable();
+            if (roomProperties == null) roomProperties = new Hashtable();
             roomResponse.RoomOptions = roomProperties;
             roomProperties.Add(Constants.kRoomId, sessionId);
             await CreateLobby(sessionId, Constants.kMaxPlayers, roomProperties);
@@ -70,13 +70,13 @@ namespace Hashbyte.Multiplayer
                 string roomId = await JoinLobby("", "");
                 if (string.IsNullOrEmpty(roomId))
                 {
-                    return await CreateRoom(false, roomProperties);
+                    roomResponse = (UnityRoomResponse)(await CreateRoom(false, roomProperties));
                 }
                 else
                 {
                     await JoinRelaySession(roomId);
-                    return roomResponse;
                 }
+                return roomResponse;
             }
             catch (RelayServiceException exception)
             {
@@ -109,7 +109,8 @@ namespace Hashbyte.Multiplayer
         public async Task CreateLobby(string lobbyName, int maxPlayers, Hashtable roomProperties)
         {
             Dictionary<string, DataObject> data = new Dictionary<string, DataObject>();
-            foreach(string key in roomProperties.Keys) { 
+            foreach (string key in roomProperties.Keys)
+            {
                 DataObject dataObject = new DataObject(visibility: DataObject.VisibilityOptions.Public,
                     value: roomProperties[key].ToString());
                 data.Add(key, dataObject);
@@ -136,7 +137,7 @@ namespace Hashbyte.Multiplayer
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
                 roomResponse.LobbyId = lobbyId;
-                roomResponse.RoomOptions = new Hashtable(lobby.Data.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value.Value));
+                roomResponse.RoomOptions = new Hashtable(lobby.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value));
                 try
                 {
                     await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);

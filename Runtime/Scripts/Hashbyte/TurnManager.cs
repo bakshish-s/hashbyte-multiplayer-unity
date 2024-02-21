@@ -49,5 +49,10 @@ namespace Hashbyte.Multiplayer
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnRoomJoined(Hashtable roomProperties)
+        {
+            
+        }
     }
 }

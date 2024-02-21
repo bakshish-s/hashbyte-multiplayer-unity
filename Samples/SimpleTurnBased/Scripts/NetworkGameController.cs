@@ -44,10 +44,15 @@ namespace Hashbyte.Multiplayer.Demo
 
         void INetworkEvents.OnPlayerConnected()
         {
-            throw new System.NotImplementedException();
+            
         }
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
+        {
+            
+        }
+
+        public void OnRoomJoined(Hashtable roomProperties)
         {
             throw new System.NotImplementedException();
         }

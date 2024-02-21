@@ -63,8 +63,13 @@ namespace Hashbyte.Multiplayer
             networkService.RegisterCallbacks(networkEventListener);
             roomService.RegisterCallbacks(networkEventListener);
         }
+        
+        public async void JoinOrCreateGame(Hashtable roomProperties = null)
+        {
+            await JoinOrCreateGameAsync(roomProperties);
+        }
 
-        public async Task<IRoomResponse> JoinOrCreateGame(Hashtable roomProperties = null)
+        public async Task<IRoomResponse> JoinOrCreateGameAsync(Hashtable roomProperties = null)
         {
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);

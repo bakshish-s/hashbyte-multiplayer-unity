@@ -28,7 +28,7 @@ namespace Hashbyte.Multiplayer.Demo
                 { "Host", playerId }
             };
             //Try to join a random game if available
-            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGame(roomOptions);
+            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGameAsync(roomOptions);
             if (roomResponse.Success)
             {
                 OnMultiplayerRoomJoined();
@@ -78,6 +78,11 @@ namespace Hashbyte.Multiplayer.Demo
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
             Debug.Log("Room properties updated");
+        }
+
+        public void OnRoomJoined(Hashtable roomProperties)
+        {
+            
         }
     }
 }
