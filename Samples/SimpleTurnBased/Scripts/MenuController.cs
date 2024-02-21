@@ -23,11 +23,22 @@ namespace Hashbyte.Multiplayer.Demo
             await MultiplayerService.Instance.Initialize(new NetworkPlayer() { PlayerId = playerId });
             DeactivateAllPanels();
             lobbyPanel.SetActive(true);
+            Hashtable roomOptions = new Hashtable
+            {
+                { "Host", playerId }
+            };
             //Try to join a random game if available
-            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinRandomGame();
+            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGame(roomOptions);
             if (roomResponse.Success)
             {
                 OnMultiplayerRoomJoined();
+                if(roomResponse.RoomOptions != null)
+                {
+                    if (roomResponse.RoomOptions.ContainsKey("Host"))
+                    {
+                        waitingMessage.text = roomResponse.RoomOptions["Host"].ToString();
+                    }
+                }
             }
 
         }

@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Services.Relay.Models;
 
 namespace Hashbyte.Multiplayer
@@ -13,6 +14,8 @@ namespace Hashbyte.Multiplayer
         public bool isHost { get; set; }
 
         public string LobbyId{get; set; }
+
+        public Hashtable RoomOptions{get; set; }
 
         public Allocation hostAllocation;
         public JoinAllocation clientAllocation;

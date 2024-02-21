@@ -7,6 +7,7 @@ namespace Hashbyte.Multiplayer
         public bool Success { get; }
         public RoomError Error { get; }
         public bool isHost { get; }
+        public System.Collections.Hashtable RoomOptions { get; }
 
     }
     public struct RoomError

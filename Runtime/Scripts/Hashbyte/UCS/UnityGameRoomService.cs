@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -48,16 +49,19 @@ namespace Hashbyte.Multiplayer
             networkEventListeners.Add(networkEvents);
         }
 
-        public async Task<IRoomResponse> CreateRoom(bool isPrivate)
+        public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
             string sessionId = await CreateRelaySession(Constants.kRegionForServer);
-            await CreateLobby(sessionId, Constants.kMaxPlayers, sessionId);
+            if(roomProperties == null) roomProperties = new Hashtable();
+            roomResponse.RoomOptions = roomProperties;
+            roomProperties.Add(Constants.kRoomId, sessionId);
+            await CreateLobby(sessionId, Constants.kMaxPlayers, roomProperties);
             roomResponse.RoomId = sessionId;
             roomResponse.Success = true;
             return roomResponse;
         }
 
-        public async Task<IRoomResponse> JoinRandomRoom()
+        public async Task<IRoomResponse> JoinOrCreateRoom(Hashtable roomProperties)
         {
             Debug.Log($"Joining random room ");
             try
@@ -66,7 +70,7 @@ namespace Hashbyte.Multiplayer
                 string roomId = await JoinLobby("", "");
                 if (string.IsNullOrEmpty(roomId))
                 {
-                    return await CreateRoom(false);
+                    return await CreateRoom(false, roomProperties);
                 }
                 else
                 {
@@ -102,11 +106,17 @@ namespace Hashbyte.Multiplayer
             roomResponse.RoomId = sessionId;
         }
 
-        public async Task CreateLobby(string lobbyName, int maxPlayers, object additionalData)
+        public async Task CreateLobby(string lobbyName, int maxPlayers, Hashtable roomProperties)
         {
+            Dictionary<string, DataObject> data = new Dictionary<string, DataObject>();
+            foreach(string key in roomProperties.Keys) { 
+                DataObject dataObject = new DataObject(visibility: DataObject.VisibilityOptions.Public,
+                    value: roomProperties[key].ToString());
+                data.Add(key, dataObject);
+            }
             CreateLobbyOptions options = new CreateLobbyOptions()
             {
-                Data = new Dictionary<string, DataObject> { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, additionalData.ToString()) } }
+                Data = data
             };
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, 2, options);
             try
@@ -126,6 +136,7 @@ namespace Hashbyte.Multiplayer
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
                 roomResponse.LobbyId = lobbyId;
+                roomResponse.RoomOptions = new Hashtable(lobby.Data.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value.Value));
                 try
                 {
                     await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);

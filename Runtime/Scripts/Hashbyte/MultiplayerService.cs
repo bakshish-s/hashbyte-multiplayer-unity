@@ -64,11 +64,11 @@ namespace Hashbyte.Multiplayer
             roomService.RegisterCallbacks(networkEventListener);
         }
 
-        public async Task<IRoomResponse> JoinRandomGame()
+        public async Task<IRoomResponse> JoinOrCreateGame(Hashtable roomProperties = null)
         {
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
-            IRoomResponse roomResponse = await roomService.JoinRandomRoom();
+            IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
             networkService.ConnectToServer(connectionSettings);      
             CurrentRoomId = roomResponse.LobbyId;
