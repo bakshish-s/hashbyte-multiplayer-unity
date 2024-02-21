@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Hashbyte.Multiplayer
@@ -40,6 +41,11 @@ namespace Hashbyte.Multiplayer
         }
 
         public void OnPlayerJoined()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
             throw new System.NotImplementedException();
         }

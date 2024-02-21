@@ -11,6 +11,9 @@ namespace Hashbyte.Multiplayer
         public RoomError Error { get; set; }
 
         public bool isHost { get; set; }
+
+        public string LobbyId{get; set; }
+
         public Allocation hostAllocation;
         public JoinAllocation clientAllocation;
     }

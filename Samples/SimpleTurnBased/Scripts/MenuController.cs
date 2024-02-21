@@ -1,4 +1,5 @@
 using Hashbyte.Multiplayer;
+using System.Collections;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
 {
@@ -7,7 +8,7 @@ namespace Hashbyte.Multiplayer.Demo
         public string playerId;
         public GameObject menuPanel, lobbyPanel, waitingPanel;
         public UnityEngine.UI.Button playButton;
-        public TMPro.TextMeshProUGUI waitingMessage;        
+        public TMPro.TextMeshProUGUI waitingMessage;
 
         private void OnMultiplayerRoomJoined()
         {
@@ -19,12 +20,12 @@ namespace Hashbyte.Multiplayer.Demo
         {
             MultiplayerService.Instance.RegisterCallbacks(this);
             //Initialize Multiplayer Services            
-            await MultiplayerService.Instance.Initialize(new NetworkPlayer() { PlayerId = playerId});
+            await MultiplayerService.Instance.Initialize(new NetworkPlayer() { PlayerId = playerId });
             DeactivateAllPanels();
-            lobbyPanel.SetActive(true);            
+            lobbyPanel.SetActive(true);
             //Try to join a random game if available
             IRoomResponse roomResponse = await MultiplayerService.Instance.JoinRandomGame();
-            if(roomResponse.Success)
+            if (roomResponse.Success)
             {
                 OnMultiplayerRoomJoined();
             }
@@ -45,12 +46,27 @@ namespace Hashbyte.Multiplayer.Demo
 
         void INetworkEvents.OnPlayerConnected()
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(1);
+            //UnityEngine.SceneManagement.SceneManager.LoadScene(1);
         }
 
         public void OnNetworkMessage(GameEvent gameEvent)
+        { }
+
+        private void Update()
         {
-            throw new System.NotImplementedException();
+            if(Input.GetKeyDown(KeyCode.U))
+            {
+                Hashtable roomProperties = new Hashtable
+                {
+                    { "seed", 1234 }
+                };
+                MultiplayerService.Instance.UpdateRoomProperties(roomProperties);
+            }
+        }
+
+        public void OnRoomPropertiesUpdated(Hashtable roomProperties)
+        {
+            Debug.Log("Room properties updated");
         }
     }
 }

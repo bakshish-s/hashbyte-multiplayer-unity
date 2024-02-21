@@ -1,9 +1,11 @@
+
 namespace Hashbyte.Multiplayer
 {
     public interface INetworkEvents
     {
         public void OnPlayerJoined();
         public void OnPlayerConnected();
+        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties);
         public void OnNetworkMessage(GameEvent gameEvent);
     }            
 

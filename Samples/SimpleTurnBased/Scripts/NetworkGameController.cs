@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
@@ -42,6 +43,11 @@ namespace Hashbyte.Multiplayer.Demo
         }
 
         void INetworkEvents.OnPlayerConnected()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
             throw new System.NotImplementedException();
         }

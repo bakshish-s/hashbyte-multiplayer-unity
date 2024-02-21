@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,6 +12,7 @@ namespace Hashbyte.Multiplayer
         private static MultiplayerService _instance;
         public static MultiplayerService Instance { get { if (_instance == null) _instance = new MultiplayerService(ServiceType.UNITY); return _instance; } }
         #endregion
+        public string CurrentRoomId { get; private set; }        
         protected bool isInitialized => authService.IsInitialized;
         private IAuthService authService { get; set; }
         private IGameRoomService roomService { get; set; }
@@ -33,7 +36,7 @@ namespace Hashbyte.Multiplayer
                     break;
                 default:
                     break;
-            }
+            }            
         }
 
         public async Task Initialize(INetworkPlayer player)
@@ -67,8 +70,15 @@ namespace Hashbyte.Multiplayer
             if (!isInitialized) await Initialize(null);
             IRoomResponse roomResponse = await roomService.JoinRandomRoom();
             connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
-            networkService.ConnectToServer(connectionSettings);           
+            networkService.ConnectToServer(connectionSettings);      
+            CurrentRoomId = roomResponse.LobbyId;
             return roomResponse;
+        }
+
+        public void UpdateRoomProperties(Hashtable roomData)
+        {            
+            roomService.UpdateRoomProperties(CurrentRoomId, roomData);
+            
         }
 
         public void SendMove(GameEvent gameMove)

@@ -12,8 +12,7 @@ namespace Hashbyte.Multiplayer
         /// </summary>
         /// <returns>Room ID/Code/Name of the room created</returns>
         public System.Threading.Tasks.Task<IRoomResponse> CreateRoom(bool isPrivate);
-        public void RegisterCallbacks(INetworkEvents networkEvents);        
-        public delegate void RoomJoined();
-        public event RoomJoined OnRoomJoined;
+        public System.Threading.Tasks.Task UpdateRoomProperties(string roomID, System.Collections.Hashtable roomProperties);
+        public void RegisterCallbacks(INetworkEvents networkEvents); 
     }
 }
