@@ -1,6 +1,9 @@
-public interface INetworkPlayer
+namespace Hashbyte.Multiplayer
 {
-    public string PlayerId { get; }
-    public int actorNumber { get; }
-    public void OnTurnUpdate(bool isMyTurn);
+    public interface INetworkPlayer
+    {
+        public string PlayerId { get; }
+        public int actorNumber { get; }
+        public void OnTurnUpdate(bool isMyTurn);
+    }
 }
