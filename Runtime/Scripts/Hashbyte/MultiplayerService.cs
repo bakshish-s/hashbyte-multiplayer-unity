@@ -12,7 +12,9 @@ namespace Hashbyte.Multiplayer
         private static MultiplayerService _instance;
         public static MultiplayerService Instance { get { if (_instance == null) _instance = new MultiplayerService(ServiceType.UNITY); return _instance; } }
         #endregion
-        public string CurrentRoomId { get; private set; }        
+        public string CurrentRoomId { get; private set; }
+        public string PlayerId => authService.PlayerId;
+        public bool IsHost {  get; private set; }
         protected bool isInitialized => authService.IsInitialized;
         private IAuthService authService { get; set; }
         private IGameRoomService roomService { get; set; }
@@ -77,6 +79,7 @@ namespace Hashbyte.Multiplayer
             connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
             networkService.ConnectToServer(connectionSettings);      
             CurrentRoomId = roomResponse.LobbyId;
+            IsHost = roomResponse.isHost;
             return roomResponse;
         }
 

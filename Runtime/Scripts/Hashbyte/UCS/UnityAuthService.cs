@@ -6,7 +6,9 @@ namespace Hashbyte.Multiplayer
     public class UnityAuthService : IAuthService
     {
         public bool IsInitialized { get; private set; }
-        
+
+        public string PlayerId => AuthenticationService.Instance.PlayerId;
+
         public async Task Authenticate()
         {            
             //Initialize unity services
