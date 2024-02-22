@@ -164,7 +164,7 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
-            //foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnGameMove(gameEvent);
+            foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnNetworkMessage(gameEvent);
         }
 
         public void SendMove(GameEvent gameEvent)
