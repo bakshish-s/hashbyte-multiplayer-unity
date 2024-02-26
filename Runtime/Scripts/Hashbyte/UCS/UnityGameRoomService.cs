@@ -52,34 +52,38 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
             string sessionId = await CreateRelaySession(Constants.kRegionForServer);
+            Debug.Log($"Relay session created {sessionId}");
             if (roomProperties == null) roomProperties = new Hashtable();
             roomResponse.RoomOptions = roomProperties;
             roomProperties.Add(Constants.kRoomId, sessionId);
             await CreateLobby(sessionId, Constants.kMaxPlayers, roomProperties);
             roomResponse.RoomId = sessionId;
             roomResponse.Success = true;
+            Debug.Log($"Lobby Created");
             return roomResponse;
         }
 
         public async Task<IRoomResponse> JoinOrCreateRoom(Hashtable roomProperties)
         {
-            Debug.Log($"Joining random room ");
             try
             {
                 roomResponse = new UnityRoomResponse();
                 string roomId = await JoinLobby("", "");
                 if (string.IsNullOrEmpty(roomId))
                 {
+                    Debug.Log($"Creating Room");
                     roomResponse = (UnityRoomResponse)(await CreateRoom(false, roomProperties));
                 }
                 else
                 {
+                    Debug.Log($"Joining Room");
                     await JoinRelaySession(roomId);
                 }
                 return roomResponse;
             }
             catch (RelayServiceException exception)
             {
+                Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
                 roomResponse = new UnityRoomResponse();
                 roomResponse.Success = false;
                 roomResponse.Error = new RoomError()

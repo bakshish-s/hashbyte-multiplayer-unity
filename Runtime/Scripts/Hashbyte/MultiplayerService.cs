@@ -14,7 +14,7 @@ namespace Hashbyte.Multiplayer
         #endregion
         public string CurrentRoomId { get; private set; }
         public string PlayerId => authService.PlayerId;
-        public bool IsHost {  get; private set; }
+        public bool IsHost { get; private set; }
         protected bool isInitialized => authService.IsInitialized;
         private IAuthService authService { get; set; }
         private IGameRoomService roomService { get; set; }
@@ -23,7 +23,7 @@ namespace Hashbyte.Multiplayer
         private INetworkPlayer networkPlayer { get; set; }
 
         public MultiplayerService(ServiceType serviceType)
-        {            
+        {
             switch (serviceType)
             {
                 case ServiceType.UNITY:
@@ -38,12 +38,12 @@ namespace Hashbyte.Multiplayer
                     break;
                 default:
                     break;
-            }            
+            }
         }
 
         public async Task Initialize(INetworkPlayer player)
         {
-            if(isInitialized) return;
+            if (isInitialized) return;
             if (player == null) await authService.Authenticate();
             else
             {
@@ -56,7 +56,7 @@ namespace Hashbyte.Multiplayer
         {
             networkPlayer = player;
             if (networkService.IsConnected)
-            {                
+            {
                 networkPlayer.OnTurnUpdate(networkService.IsHost);
             }
         }
@@ -65,7 +65,7 @@ namespace Hashbyte.Multiplayer
             networkService.RegisterCallbacks(networkEventListener);
             roomService.RegisterCallbacks(networkEventListener);
         }
-        
+
         public async void JoinOrCreateGame(Hashtable roomProperties = null)
         {
             await JoinOrCreateGameAsync(roomProperties);
@@ -76,17 +76,24 @@ namespace Hashbyte.Multiplayer
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
-            connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
-            networkService.ConnectToServer(connectionSettings);      
-            CurrentRoomId = roomResponse.LobbyId;
-            IsHost = roomResponse.isHost;
+            if (roomResponse.Success)
+            {
+                connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
+                networkService.ConnectToServer(connectionSettings);
+                CurrentRoomId = roomResponse.LobbyId;
+                IsHost = roomResponse.isHost;
+            }
+            else
+            {
+                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
+            }
             return roomResponse;
         }
 
         public void UpdateRoomProperties(Hashtable roomData)
-        {            
+        {
             roomService.UpdateRoomProperties(CurrentRoomId, roomData);
-            
+
         }
 
         public void SendMove(GameEvent gameMove)
