@@ -76,7 +76,7 @@ namespace Hashbyte.Multiplayer
                 }
                 else
                 {
-                    Debug.Log($"Joining Room");
+                    Debug.Log($"Joining Room {roomId}");
                     await JoinRelaySession(roomId);
                 }
                 return roomResponse;
@@ -140,8 +140,13 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync();
-                roomResponse.LobbyId = lobbyId;
-                roomResponse.RoomOptions = new Hashtable(lobby.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value));
+                roomResponse.LobbyId = lobby.Id;
+                roomResponse.RoomOptions = new Hashtable();
+                foreach(string key in lobby.Data.Keys)
+                {
+                    Debug.Log($"Getting data from joined lobby {key}, {lobby.Data[key].Value}");
+                    roomResponse.RoomOptions.Add(key, lobby.Data[key].Value);
+                }                
                 try
                 {
                     await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
