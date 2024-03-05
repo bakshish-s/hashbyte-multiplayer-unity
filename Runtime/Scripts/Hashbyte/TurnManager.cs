@@ -40,7 +40,7 @@ namespace Hashbyte.Multiplayer
             throw new System.NotImplementedException();
         }
 
-        public void OnPlayerJoined()
+        public void OnPlayerJoined(string playerName)
         {
             throw new System.NotImplementedException();
         }

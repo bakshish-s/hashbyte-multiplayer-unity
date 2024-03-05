@@ -3,11 +3,11 @@ namespace Hashbyte.Multiplayer
 {
     public interface INetworkEvents
     {
-        public void OnPlayerJoined();
+        public void OnPlayerJoined(string playerName);
         public void OnPlayerConnected();
         public void OnRoomJoined(System.Collections.Hashtable roomProperties);
-        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties);
-        public void OnNetworkMessage(GameEvent gameEvent);
+        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;
+        public void OnNetworkMessage(GameEvent gameEvent) ;
     }            
 
     public enum NetworkErrorCode

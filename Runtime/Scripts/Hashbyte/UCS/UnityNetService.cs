@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using UnityEditor.MemoryProfiler;
 namespace Hashbyte.Multiplayer
 {
     public class UnityNetService : INetworkService
@@ -22,7 +21,7 @@ namespace Hashbyte.Multiplayer
             bool connectionStatus;
             if (!(connectSettings is UnityConnectSettings)) return false;
             UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
-            IsHost = unityConnect.RoomResponse.isHost;
+            IsHost = unityConnect.RoomResponse.Room.isHost;
             RelayServerData relayServerData;
             if (IsHost)
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
@@ -45,7 +44,7 @@ namespace Hashbyte.Multiplayer
                 Debug.Log($"Asking Host to accept my connection {((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation}");
                 clientConnection = driver.Connect();
             }
-            Debug.Log($"Client {connectionStatus} connection {clientConnection} ");
+            Debug.Log($"Ready to start game ");
             IsConnected = connectionStatus;
             return connectionStatus;
         }

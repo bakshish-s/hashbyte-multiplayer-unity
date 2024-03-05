@@ -17,7 +17,7 @@ namespace Hashbyte.Multiplayer.Demo
             MultiplayerService.Instance.RegisterCallbacks(turnManager);
         }                   
 
-        public void OnPlayerJoined()
+        public void OnPlayerJoined(string playerName)
         {
             throw new System.NotImplementedException();
         }       

@@ -28,7 +28,7 @@ namespace Hashbyte.Multiplayer
                 options.SetProfile(networkPlayer.PlayerId);
                 await UnityServices.InitializeAsync(options);
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"User {options} authenticated with ID {AuthenticationService.Instance.PlayerId}");
+                Debug.Log($"User {AuthenticationService.Instance.PlayerName} authenticated with ID {AuthenticationService.Instance.PlayerId}");
                 IsInitialized = true;
             }                
         }

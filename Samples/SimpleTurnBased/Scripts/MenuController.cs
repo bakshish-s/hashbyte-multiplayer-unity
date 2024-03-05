@@ -1,4 +1,3 @@
-using Hashbyte.Multiplayer;
 using System.Collections;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
@@ -8,8 +7,7 @@ namespace Hashbyte.Multiplayer.Demo
         public string playerId;
         public GameObject menuPanel, lobbyPanel, waitingPanel;
         public UnityEngine.UI.Button playButton;
-        public TMPro.TextMeshProUGUI waitingMessage;
-
+        public TMPro.TextMeshProUGUI waitingMessage;       
         private void OnMultiplayerRoomJoined()
         {
             DeactivateAllPanels();
@@ -23,21 +21,18 @@ namespace Hashbyte.Multiplayer.Demo
             await MultiplayerService.Instance.Initialize(new NetworkPlayer() { PlayerId = playerId });
             DeactivateAllPanels();
             lobbyPanel.SetActive(true);
-            Hashtable roomOptions = new Hashtable
-            {
-                { "Host", playerId }
-            };
             //Try to join a random game if available
-            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGameAsync(roomOptions);
+            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGameAsync(null);
             if (roomResponse.Success)
             {
                 OnMultiplayerRoomJoined();
-                if(roomResponse.RoomOptions != null)
+                if(roomResponse.Room != null)
                 {
-                    if (roomResponse.RoomOptions.ContainsKey("Host"))
+                    waitingMessage.text = "<color=green>Players in game\n";
+                    for(int i=0; i<roomResponse.Room.Players.Count; i++)
                     {
-                        waitingMessage.text = roomResponse.RoomOptions["Host"].ToString();
-                    }
+                        waitingMessage.text += roomResponse.Room.Players[i]+"\n";
+                    }                    
                 }
             }
 
@@ -50,9 +45,14 @@ namespace Hashbyte.Multiplayer.Demo
             waitingPanel.SetActive(false);
         }
 
-        public void OnPlayerJoined(/*int actorNumber, string playerId, string playerName*/)
+        public void OnPlayerJoined(string playerName)
         {
-            waitingMessage.text = $"Player Joined";
+            Debug.Log($"Player joined in MenuController");
+            waitingMessage.text = "<color=red>Players in game\n";
+            for (int i = 0; i < MultiplayerService.Instance.CurrentRoom.Players.Count; i++)
+            {
+                waitingMessage.text += MultiplayerService.Instance.CurrentRoom.Players[i] + "\n";
+            }
         }
 
         void INetworkEvents.OnPlayerConnected()
@@ -77,7 +77,13 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
-            Debug.Log("Room properties updated");
+            //Debug.Log("Room properties updated");
+            //waitingMessage.text = "Players in game\n";
+            //if (MultiplayerService.Instance.CurrentRoom == null) return;
+            //for (int i = 0; i < MultiplayerService.Instance.CurrentRoom.Players.Count; i++)
+            //{
+            //    waitingMessage.text += MultiplayerService.Instance.CurrentRoom.Players[i] + "\n";
+            //}
         }
 
         public void OnRoomJoined(Hashtable roomProperties)
