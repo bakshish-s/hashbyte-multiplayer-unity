@@ -18,9 +18,9 @@ namespace Hashbyte.Multiplayer.Demo
         {
             MultiplayerService.Instance.RegisterCallbacks(this);
             //Initialize Multiplayer Services            
-            await MultiplayerService.Instance.Initialize(new NetworkPlayer() { PlayerId = playerId });
+            await MultiplayerService.Instance.Initialize(playerId);
             DeactivateAllPanels();
-            lobbyPanel.SetActive(true);
+            lobbyPanel.SetActive(true);            
             //Try to join a random game if available
             IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGameAsync(null);
             if (roomResponse.Success)
@@ -35,7 +35,27 @@ namespace Hashbyte.Multiplayer.Demo
                     }                    
                 }
             }
+        }
 
+        public async void CreatePrivateGame()
+        {
+            MultiplayerService.Instance.RegisterCallbacks(this);
+            //Initialize Multiplayer Services            
+            await MultiplayerService.Instance.Initialize(playerId);
+            lobbyPanel.SetActive(true);
+            string roomCode = await MultiplayerService.Instance.CreatePrivateGameAsync(null);
+            Debug.Log(roomCode);
+        }
+
+        public async void GUI_JoinAsyncGame(TMPro.TMP_InputField passCodeField)
+        {
+            MultiplayerService.Instance.RegisterCallbacks(this);
+            //Initialize Multiplayer Services            
+            await MultiplayerService.Instance.Initialize(playerId);
+            DeactivateAllPanels();
+            lobbyPanel.SetActive(true);
+            IRoomResponse roomResponse = await MultiplayerService.Instance.JoinPrivateGameAsync(passCodeField.text);
+            Debug.Log(roomResponse.Success);
         }
 
         private void DeactivateAllPanels()

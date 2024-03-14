@@ -3,8 +3,9 @@ namespace Hashbyte.Multiplayer
     public class NetworkPlayer : INetworkPlayer
     {
         public string PlayerId { get; set; }
+        public string PlayerName { get; set; }
 
-        public int actorNumber => throw new System.NotImplementedException();
+        public int ActorNumber { get; set; }
 
         public void OnTurnUpdate(bool isMyTurn)
         {

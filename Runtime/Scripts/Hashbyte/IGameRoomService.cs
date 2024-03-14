@@ -13,10 +13,10 @@ namespace Hashbyte.Multiplayer
         /// <returns>Room ID/Code/Name of the room created</returns>
         public System.Threading.Tasks.Task<IRoomResponse> CreateRoom(bool isPrivate, System.Collections.Hashtable roomProperties);
         public System.Threading.Tasks.Task<IRoomResponse> JoinRoom(string roomId, System.Collections.Hashtable options);
+        public System.Threading.Tasks.Task<IRoomResponse> JoinRoomByCode(string roomCode, System.Collections.Hashtable options);
         public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> FindAvailableRooms();
         public System.Threading.Tasks.Task DeleteRoom(string roomId);
         public System.Threading.Tasks.Task UpdateRoomProperties(string roomID, System.Collections.Hashtable roomProperties);
-        public void RegisterCallbacks(INetworkEvents networkEvents); 
 
     }
 }

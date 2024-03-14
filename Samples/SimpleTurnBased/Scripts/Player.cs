@@ -16,14 +16,13 @@ namespace Hashbyte.Multiplayer.Demo
         public bool isMyTurn { get; private set; }
         public Color myTileColor { get; private set; }
         private void Start()
-        {            
-            MultiplayerService.Instance.RegisterPlayer(this);
+        {                        
             myTileColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));  
         }
 
         public string PlayerId => GetHashCode().ToString();
 
-        public int actorNumber {get; set;}
+        public int ActorNumber {get; set;}
 
         public void JoinedGame(string roomId)
         {

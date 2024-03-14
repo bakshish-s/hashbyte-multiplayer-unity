@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Hashbyte.Multiplayer
 {
     //Responsibility: To provide access to different components of multiplayer services like Authentication, Lobby, Relay, Matchmaking etc.
-    public class MultiplayerService : INetworkEvents
+    public class MultiplayerService : IMultiplayerEvents
     {
         #region Singelton
         private static MultiplayerService _instance;
@@ -20,6 +22,7 @@ namespace Hashbyte.Multiplayer
         private INetworkService networkService { get; set; }
         private IConnectSettings connectionSettings { get; set; }
         private INetworkPlayer networkPlayer { get; set; }
+        private List<INetworkEvents> networkListeners;
 
         public MultiplayerService(ServiceType serviceType)
         {
@@ -27,7 +30,7 @@ namespace Hashbyte.Multiplayer
             {
                 case ServiceType.UNITY:
                     authService = new UnityAuthService();
-                    roomService = new UnityGameRoomService();
+                    roomService = new UnityGameRoomService(this);
                     networkService = new UnityNetService();
                     connectionSettings = new UnityConnectSettings();
                     break;
@@ -37,33 +40,22 @@ namespace Hashbyte.Multiplayer
                     break;
                 default:
                     break;
-            }
-            roomService.RegisterCallbacks(this);
+            }            
+            networkListeners = new List<INetworkEvents>();
         }
 
-        public async Task Initialize(INetworkPlayer player)
+        public async Task Initialize(string playerId)
         {
             if (isInitialized) return;
-            if (player == null) await authService.Authenticate();
-            else
-            {
-                networkPlayer = player;
-                await authService.AuthenticateWith(player);
-            }
+            if (string.IsNullOrEmpty(playerId)) playerId = "Player_" + System.Guid.NewGuid().ToString();
+            networkPlayer = new NetworkPlayer() { PlayerId = playerId, };
+            await authService.AuthenticateWith(networkPlayer);
         }
 
-        public void RegisterPlayer(INetworkPlayer player)
-        {
-            networkPlayer = player;
-            if (networkService.IsConnected)
-            {
-                networkPlayer.OnTurnUpdate(networkService.IsHost);
-            }
-        }
         public void RegisterCallbacks(INetworkEvents networkEventListener)
         {
             networkService.RegisterCallbacks(networkEventListener);
-            roomService.RegisterCallbacks(networkEventListener);
+            networkListeners.Add(networkEventListener);
         }
 
         public async void JoinOrCreateGame(Hashtable roomProperties = null)
@@ -157,8 +149,38 @@ namespace Hashbyte.Multiplayer
             networkService?.NetworkUpdate();
         }
 
-        public void CreatePrivateGame() { }
-        public void JoinPrivateGame() { }
+        public async void CreatePrivateGame(Hashtable gameOptions)
+        {
+            await CreatePrivateGameAsync(gameOptions);
+        }
+
+        public async Task<string> CreatePrivateGameAsync(Hashtable gameOptions)
+        {
+            if (gameOptions == null) gameOptions = new Hashtable();
+            if (networkPlayer != null && !string.IsNullOrEmpty(networkPlayer.PlayerId))
+            {
+                gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+            }
+            else
+            {
+                gameOptions.Add(Constants.kPlayerName, "Player_" + DateTime.UtcNow.Ticks.ToString());
+            }
+            IRoomResponse roomResponse = await roomService.CreateRoom(true, gameOptions);
+            return roomResponse.Room.RoomId;
+        }
+        public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode)
+        {
+            Hashtable gameOptions = new Hashtable();
+            if (networkPlayer != null && !string.IsNullOrEmpty(networkPlayer.PlayerId))
+            {
+                gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+            }
+            else
+            {
+                gameOptions.Add(Constants.kPlayerName, "Player_" + DateTime.UtcNow.Ticks.ToString());
+            }
+            return await roomService.JoinRoom(passcode, gameOptions);
+        }
         public void Dispose()
         {
             networkService?.Dispose();
@@ -192,11 +214,33 @@ namespace Hashbyte.Multiplayer
         public void OnPlayerJoined(string joinedPlayerName)
         {
             isGameJoined = true;
-            if(CurrentRoom != null)
+            if (CurrentRoom != null)
             {
                 CurrentRoom.AddPlayer(joinedPlayerName);
                 Debug.Log($"Added newly joined player to room");
             }
+        }
+
+        public void JoinRoomResponse(IRoomResponse roomResponse)
+        {
+            Debug.Log($"Room Join status {roomResponse.Success}");
+            foreach(INetworkEvents networkListener in networkListeners)
+            {
+                if (roomResponse.Success)
+                {
+                    networkListener.OnRoomJoined(roomResponse.Room);
+                }
+            }
+        }
+
+        public void CreateRoomResponse(IRoomResponse roomResponse)
+        {
+            
+        }
+
+        public void OnPlayerJoinedRoom(List<string> playersJoined)
+        {
+            
         }
     }
 }
