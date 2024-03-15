@@ -50,7 +50,7 @@ namespace Hashbyte.Multiplayer
             throw new System.NotImplementedException();
         }
 
-        public void OnRoomJoined(Hashtable roomProperties)
+        public void OnRoomJoined(GameRoom room)
         {
             
         }

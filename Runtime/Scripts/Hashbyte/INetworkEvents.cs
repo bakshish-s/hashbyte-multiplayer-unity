@@ -1,13 +1,12 @@
 
 namespace Hashbyte.Multiplayer
 {
-    public interface INetworkEvents
+    public interface INetworkEvents : ITurnEvents
     {
         public void OnPlayerJoined(string playerName);
         public void OnPlayerConnected();
         public void OnRoomJoined(GameRoom roomJoined);
-        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;
-        public void OnNetworkMessage(GameEvent gameEvent) ;
+        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;        
     }            
 
     public enum NetworkErrorCode

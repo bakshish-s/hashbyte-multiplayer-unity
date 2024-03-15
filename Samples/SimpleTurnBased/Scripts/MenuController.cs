@@ -106,7 +106,7 @@ namespace Hashbyte.Multiplayer.Demo
             //}
         }
 
-        public void OnRoomJoined(Hashtable roomProperties)
+        public void OnRoomJoined(GameRoom room)
         {
             
         }

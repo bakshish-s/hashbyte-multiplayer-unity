@@ -31,7 +31,7 @@ namespace Hashbyte.Multiplayer
                 case ServiceType.UNITY:
                     authService = new UnityAuthService();
                     roomService = new UnityGameRoomService(this);
-                    networkService = new UnityNetService();
+                    networkService = new UnityNetService(this);
                     connectionSettings = new UnityConnectSettings();
                     break;
                 case ServiceType.EPIC:
@@ -40,7 +40,7 @@ namespace Hashbyte.Multiplayer
                     break;
                 default:
                     break;
-            }            
+            }
             networkListeners = new List<INetworkEvents>();
         }
 
@@ -53,8 +53,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public void RegisterCallbacks(INetworkEvents networkEventListener)
-        {
-            networkService.RegisterCallbacks(networkEventListener);
+        {            
             networkListeners.Add(networkEventListener);
         }
 
@@ -67,15 +66,7 @@ namespace Hashbyte.Multiplayer
         {
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
-            if (roomProperties == null) roomProperties = new Hashtable();
-            if (networkPlayer != null && !string.IsNullOrEmpty(networkPlayer.PlayerId))
-            {
-                roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
-            }
-            else
-            {
-                roomProperties.Add(Constants.kPlayerName, "Player_" + DateTime.UtcNow.Ticks.ToString());
-            }
+            if (roomProperties == null) roomProperties = new Hashtable() { {Constants.kPlayerName, networkPlayer.PlayerId } };            
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             if (roomResponse.Success)
             {
@@ -187,46 +178,18 @@ namespace Hashbyte.Multiplayer
         }
 
         public void OnPlayerConnected()
-        {
-            //throw new System.NotImplementedException();
+        {            
             isGameJoined = true;
-        }
-
-        public void OnRoomJoined(Hashtable roomProperties)
-        {
-            //throw new System.NotImplementedException();
-        }
-
-        public void OnRoomPropertiesUpdated(Hashtable roomProperties)
-        {
-            Debug.Log("Room Properties updated in MP Service");
-            foreach (string roomProperty in roomProperties.Keys)
-            {
-                Debug.Log($"Property {roomProperty}, {roomProperties[roomProperty]}");
-            }
-        }
-
-        public void OnNetworkMessage(GameEvent gameEvent)
-        {
-            //throw new System.NotImplementedException();
-        }
-
-        public void OnPlayerJoined(string joinedPlayerName)
-        {
-            isGameJoined = true;
-            if (CurrentRoom != null)
-            {
-                CurrentRoom.AddPlayer(joinedPlayerName);
-                Debug.Log($"Added newly joined player to room");
-            }
-        }
+            //Ready to start the game
+        }        
 
         public void JoinRoomResponse(IRoomResponse roomResponse)
         {
             Debug.Log($"Room Join status {roomResponse.Success}");
-            foreach(INetworkEvents networkListener in networkListeners)
+            if (roomResponse.Success)
             {
-                if (roomResponse.Success)
+                CurrentRoom = roomResponse.Room;
+                foreach (INetworkEvents networkListener in networkListeners)
                 {
                     networkListener.OnRoomJoined(roomResponse.Room);
                 }
@@ -235,12 +198,27 @@ namespace Hashbyte.Multiplayer
 
         public void CreateRoomResponse(IRoomResponse roomResponse)
         {
-            
-        }
 
+        }
+        /// <summary>
+        /// Called when a player joins room created by this player
+        /// </summary>
+        /// <param name="playersJoined"></param>
         public void OnPlayerJoinedRoom(List<string> playersJoined)
         {
-            
+            isGameJoined = true;
+            if (CurrentRoom != null)
+            {
+                foreach (string playerName in playersJoined)
+                {
+                    CurrentRoom.AddPlayer(new NetworkPlayer() { PlayerName = playerName });
+                }
+            }
+        }
+
+        public List<INetworkEvents> GetTurnEventListeners()
+        {
+            return networkListeners;
         }
     }
 }

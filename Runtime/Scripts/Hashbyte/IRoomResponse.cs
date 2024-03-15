@@ -37,7 +37,14 @@ namespace Hashbyte.Multiplayer
             string[] playerNames = options[Constants.kPlayers].ToString().Split(':');
             Players = new System.Collections.Generic.List<string>(playerNames);
         }
-
+        public void AddPlayer(INetworkPlayer player)
+        {
+            players.Add(player);
+        }
+        public void InsertPlayer(INetworkPlayer player, int index)
+        {
+            players.Insert(index, player);
+        }
         public void AddPlayer(string playerId) { 
             Players.Add(playerId);
         }

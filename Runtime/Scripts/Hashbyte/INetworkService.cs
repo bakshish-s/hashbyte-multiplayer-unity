@@ -8,6 +8,5 @@ namespace Hashbyte.Multiplayer
         public void NetworkUpdate();
         public void SendMove(GameEvent gameEvent);
         public void Dispose();
-        public void RegisterCallbacks(INetworkEvents networkEvents);
     }    
 }

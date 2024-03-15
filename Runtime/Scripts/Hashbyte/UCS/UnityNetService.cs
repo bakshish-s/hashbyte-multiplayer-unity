@@ -14,8 +14,8 @@ namespace Hashbyte.Multiplayer
         private NetworkConnection incomingConnection;
         private NetworkEvent.Type eventType;
         private DataStreamReader dataReader;
-        private List<INetworkEvents> networkEventListeners;
-
+        private IMultiplayerEvents multiplayerEvents;
+        internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
             bool connectionStatus;
@@ -49,12 +49,6 @@ namespace Hashbyte.Multiplayer
             return connectionStatus;
         }
 
-        public void RegisterCallbacks(INetworkEvents networkEvents)
-        {
-            if (networkEventListeners == null) networkEventListeners = new List<INetworkEvents>();
-            networkEventListeners.Add(networkEvents);
-        }
-
         public void NetworkUpdate()
         {
             BaseUpdate();
@@ -75,7 +69,7 @@ namespace Hashbyte.Multiplayer
             while ((eventType = clientConnection.PopEvent(driver, out dataReader)) != NetworkEvent.Type.Empty)
             {
                 ParseEvent();
-            }            
+            }
         }
 
         private void HostUpdate()
@@ -113,7 +107,7 @@ namespace Hashbyte.Multiplayer
             {
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
-                foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnPlayerConnected();
+                multiplayerEvents.OnPlayerConnected();
             }
         }
 
@@ -131,7 +125,7 @@ namespace Hashbyte.Multiplayer
                 // Handle Connect events.
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
-                    foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnPlayerConnected();
+                    multiplayerEvents.OnPlayerConnected();
                     break;
 
                 // Handle Disconnect events.
@@ -163,14 +157,14 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
-            foreach (INetworkEvents netEventListener in networkEventListeners) netEventListener.OnNetworkMessage(gameEvent);
+            multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
 
         public void SendMove(GameEvent gameEvent)
         {
             if (IsHost)
             {
-                foreach(NetworkConnection connection in serverConnections)
+                foreach (NetworkConnection connection in serverConnections)
                 {
                     SendMoveToConnection(gameEvent, connection);
                 }
