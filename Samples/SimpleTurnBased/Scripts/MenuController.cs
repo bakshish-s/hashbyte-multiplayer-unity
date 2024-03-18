@@ -20,7 +20,9 @@ namespace Hashbyte.Multiplayer.Demo
             //Initialize Multiplayer Services            
             await MultiplayerService.Instance.Initialize(playerId);
             DeactivateAllPanels();
-            lobbyPanel.SetActive(true);            
+            lobbyPanel.SetActive(true);
+            MultiplayerService.Instance.JoinOrCreateGame();
+            /**
             //Try to join a random game if available
             IRoomResponse roomResponse = await MultiplayerService.Instance.JoinOrCreateGameAsync(null);
             if (roomResponse.Success)
@@ -35,6 +37,7 @@ namespace Hashbyte.Multiplayer.Demo
                     }                    
                 }
             }
+            */
         }
 
         public async void CreatePrivateGame()
@@ -108,7 +111,23 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomJoined(GameRoom room)
         {
-            
+            Debug.Log($"Room joined succesfully");
+            if(room != null)
+            {
+                waitingMessage.text = "Room Joined\n";
+                Debug.Log($"Host {room.isHost}, Lobby Code {room.LobbyCode}," +
+                    $" Lobby Id {room.LobbyId}, Room Id {room.RoomId} ");
+                waitingMessage.text += $"<b>{room.LobbyCode}\n{room.RoomId}";
+                OnMultiplayerRoomJoined();
+                foreach(INetworkPlayer player in room.players)
+                {
+                    Debug.Log($"Player in room {player.PlayerId}, {player.PlayerName}");
+                }
+                foreach(string key in room.RoomOptions.Keys)
+                {
+                    Debug.Log($"Options in room {key} -- {room.RoomOptions[key]}");
+                }
+            }
         }
     }
 }

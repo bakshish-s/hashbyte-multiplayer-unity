@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Hashbyte.Multiplayer
 {
@@ -73,6 +72,7 @@ namespace Hashbyte.Multiplayer
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
                 networkService.ConnectToServer(connectionSettings);
                 CurrentRoom = roomResponse.Room;
+                /** Wait until someone joins our room
                 if (IsHost)
                 {
                     //We created this room, but we should keep trying to join a room every 10 seconds until a game is not joined.
@@ -80,6 +80,7 @@ namespace Hashbyte.Multiplayer
                     isGameJoined = false;
                     roomResponse = await TryJoinGame(roomResponse, roomProperties);
                 }
+                **/
             }
             else
             {
@@ -90,6 +91,7 @@ namespace Hashbyte.Multiplayer
         bool isGameJoined = false;
         float maxWaitTime = 60000;
         Random random = new Random();
+        /** Will work on this method later
         private async Task<IRoomResponse> TryJoinGame(IRoomResponse roomResponse, Hashtable options)
         {
             while (!isGameJoined && maxWaitTime > 0)
@@ -123,7 +125,7 @@ namespace Hashbyte.Multiplayer
             ((UnityRoomResponse)roomResponse).Success = false;
             return roomResponse;
         }
-
+        */
         public void UpdateRoomProperties(Hashtable roomData)
         {
             roomService.UpdateRoomProperties(CurrentRoom.LobbyId, roomData);

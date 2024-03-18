@@ -45,7 +45,7 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
             roomResponse = await relayService.CreateRelaySession(Constants.kRegionForServer, new UnityRoomResponse() { Room = new GameRoom() });
-            return await lobbyService.CreateLobby(roomProperties, true, (UnityRoomResponse)roomResponse);
+            return await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
         }
 
         public async Task DeleteRoom(string roomId)

@@ -26,12 +26,12 @@ namespace Hashbyte.Multiplayer
             CreateLobbyOptions options = new CreateLobbyOptions()
             {
                 Data = data,
-                Player = GetLobbyPlayer(roomProperties[Constants.kPlayers].ToString()),
+                Player = GetLobbyPlayer(roomProperties[Constants.kPlayerName].ToString()),
                 IsPrivate = isPrivate,
             };
             try
             {
-                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayers].ToString(), 2, options);
+                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 2, options);
                 Debug.Log($"Lobby {lobby.LobbyCode} {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 IRoomResponse roomResponse = GetSuccessRoomResponse(lobby, true);
@@ -98,7 +98,7 @@ namespace Hashbyte.Multiplayer
 
         private IRoomResponse GetSuccessRoomResponse(Lobby lobby, bool isHost)
         {
-            GameRoom room = GetGameRoom(lobby, false);
+            GameRoom room = GetGameRoom(lobby, isHost);
             return new UnityRoomResponse() { Room = room, Success = true };
         }
         private IRoomResponse GetFailureRoomResponse(LobbyServiceException exception)
@@ -108,14 +108,13 @@ namespace Hashbyte.Multiplayer
         private GameRoom GetGameRoom(Lobby lobby, bool isHost)
         {
             GameRoom gameRoom = new GameRoom();
-            gameRoom.RoomOptions = new Hashtable();
             foreach (string key in lobby.Data.Keys)
             {
                 gameRoom.RoomOptions.Add(key, lobby.Data[key].Value);
             }
             for (int i = 0; i < lobby.Players.Count; i++)
             {
-                gameRoom.players.Add(new NetworkPlayer() { PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value, ActorNumber = i + 1 });
+                gameRoom.AddPlayer(new NetworkPlayer() { PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value, ActorNumber = i + 1 });
             }
             gameRoom.RoomId = lobby.Data[Constants.kRoomId].Value;
             gameRoom.LobbyId = lobby.Id;

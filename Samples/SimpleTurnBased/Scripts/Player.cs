@@ -24,6 +24,8 @@ namespace Hashbyte.Multiplayer.Demo
 
         public int ActorNumber {get; set;}
 
+        public string PlayerName => throw new System.NotImplementedException();
+
         public void JoinedGame(string roomId)
         {
             
