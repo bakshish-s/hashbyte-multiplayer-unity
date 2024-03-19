@@ -5,6 +5,7 @@ namespace Hashbyte.Multiplayer
         public const string kRoomId = "HBRoomId";
         public const string kPlayers = "HBPlayers";
         public const string kPlayerName = "HBPlayerName";
+        public const string kPlayerId = "HBPlayerId";
         //Deprecated
         public const string kJoinCode = "HBJoinCode";
         public const int kMaxPlayers = 2;

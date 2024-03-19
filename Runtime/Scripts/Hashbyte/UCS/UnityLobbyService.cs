@@ -9,12 +9,25 @@ namespace Hashbyte.Multiplayer
 {
     internal class UnityLobbyService : LobbyEventCallbacks
     {
-        public delegate void LobbyPlayersJoined(List<string> players);
+        public delegate void LobbyPlayersJoined(List<INetworkPlayer> players);
         public event LobbyPlayersJoined OnPlayersJoined;
+        public delegate void LobbyPlayersLeft(List<int> playerIndices);
+        public event LobbyPlayersLeft OnPlayersLeft;
         public UnityLobbyService()
         {
             PlayerJoined += OnPlayerJoined;
+            PlayerLeft += OnPlayerLeft;
         }
+
+        private void OnPlayerLeft(List<int> playersLeft)
+        {
+            if (playersLeft.Count > 0)
+            {
+                Debug.Log($"Players left {playersLeft[0]}");
+                OnPlayersLeft?.Invoke(playersLeft);
+            }
+        }
+
         public async Task<IRoomResponse> CreateLobby(Hashtable roomProperties, bool isPrivate, UnityRoomResponse relayResponse)
         {
             Dictionary<string, DataObject> data = new Dictionary<string, DataObject>() { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, relayResponse.Room.RoomId) } };
@@ -115,7 +128,12 @@ namespace Hashbyte.Multiplayer
             }
             for (int i = 0; i < lobby.Players.Count; i++)
             {
-                gameRoom.AddPlayer(new NetworkPlayer() { PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value, ActorNumber = i + 1 });
+                gameRoom.AddPlayer(new NetworkPlayer()
+                {
+                    PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value,
+                    ActorNumber = i + 1,
+                    PlayerId = lobby.Players[i].Data[Constants.kPlayerName].Value
+                });
             }
             gameRoom.RoomId = lobby.Data[Constants.kRoomId].Value;
             gameRoom.LobbyId = lobby.Id;
@@ -126,6 +144,12 @@ namespace Hashbyte.Multiplayer
         public async Task DeleteLobby(string lobbyId)
         {
             await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+        }
+
+        public async Task LeaveLobby(string lobbyId, string playerId)
+        {
+            await LobbyService.Instance.RemovePlayerAsync(lobbyId, playerId);
+
         }
 
         public async Task UpdateLobbyData(string lobbyId, Hashtable dataToUpdate)
@@ -167,18 +191,24 @@ namespace Hashbyte.Multiplayer
 
         private void OnPlayerJoined(List<LobbyPlayerJoined> playersJoined)
         {
-            List<string> playerJoinedList = new List<string>();
+            List<INetworkPlayer> playerJoinedList = new List<INetworkPlayer>();
             foreach (LobbyPlayerJoined lobbyPlayer in playersJoined)
             {
                 Debug.Log($"Player Joined {lobbyPlayer.Player.Data[Constants.kPlayerName].Value}");
-                playerJoinedList.Add(lobbyPlayer.Player.Data[Constants.kPlayerName].Value);
+                playerJoinedList.Add(new NetworkPlayer()
+                {
+                    PlayerName = lobbyPlayer.Player.Data[Constants.kPlayerName].Value,
+                    ActorNumber = lobbyPlayer.PlayerIndex + 1,
+                    PlayerId = lobbyPlayer.Player.Data[Constants.kPlayerId].Value
+                });
             }
             OnPlayersJoined?.Invoke(playerJoinedList);
         }
         private Player GetLobbyPlayer(string playerName)
         {
             Player lobbyPlayer = new Player();
-            lobbyPlayer.Data = new Dictionary<string, PlayerDataObject>() { { Constants.kPlayerName, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName) } };
+            lobbyPlayer.Data = new Dictionary<string, PlayerDataObject>() { { Constants.kPlayerName, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName) },
+                {Constants.kPlayerId, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, Unity.Services.Authentication.AuthenticationService.Instance.PlayerId) } };
             return lobbyPlayer;
         }
 

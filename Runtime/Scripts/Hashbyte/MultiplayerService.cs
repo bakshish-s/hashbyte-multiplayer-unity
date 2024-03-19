@@ -52,7 +52,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public void RegisterCallbacks(INetworkEvents networkEventListener)
-        {            
+        {
             networkListeners.Add(networkEventListener);
         }
 
@@ -66,7 +66,7 @@ namespace Hashbyte.Multiplayer
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
             if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
-            else roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+            else if(!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             if (roomResponse.Success)
             {
@@ -130,7 +130,12 @@ namespace Hashbyte.Multiplayer
         public void UpdateRoomProperties(Hashtable roomData)
         {
             roomService.UpdateRoomProperties(CurrentRoom.LobbyId, roomData);
+        }
 
+        public async void LeaveRoom()
+        {
+            networkService.Disconnect();
+            if (CurrentRoom != null) await roomService.LeaveRoom(CurrentRoom);
         }
 
         public void SendMove(GameEvent gameMove)
@@ -157,7 +162,7 @@ namespace Hashbyte.Multiplayer
             {
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
                 networkService.ConnectToServer(connectionSettings);
-                CurrentRoom = roomResponse.Room;                
+                CurrentRoom = roomResponse.Room;
             }
             else
             {
@@ -181,10 +186,10 @@ namespace Hashbyte.Multiplayer
         }
 
         public void OnPlayerConnected()
-        {            
+        {
             isGameJoined = true;
             //Ready to start the game
-        }        
+        }
 
         public void JoinRoomResponse(IRoomResponse roomResponse)
         {
@@ -202,14 +207,13 @@ namespace Hashbyte.Multiplayer
         /// Called when a player joins room created by this player
         /// </summary>
         /// <param name="playersJoined"></param>
-        public void OnPlayerJoinedRoom(List<string> playersJoined)
+        public void OnPlayerJoinedRoom(List<INetworkPlayer> playersJoined)
         {
             isGameJoined = true;
             if (CurrentRoom != null)
             {
-                foreach (string playerName in playersJoined)
+                foreach (INetworkPlayer newPlayer in playersJoined)
                 {
-                    NetworkPlayer newPlayer = new NetworkPlayer() { PlayerName = playerName };
                     CurrentRoom.AddPlayer(newPlayer);
                     foreach (INetworkEvents networkListener in networkListeners)
                     {
@@ -222,6 +226,21 @@ namespace Hashbyte.Multiplayer
         public List<INetworkEvents> GetTurnEventListeners()
         {
             return networkListeners;
+        }
+
+        public void OnPlayerLeftRoom(List<int> playerInices)
+        {
+            if (CurrentRoom != null)
+            {
+                foreach (int playerIndex in playerInices)
+                {
+                    INetworkPlayer leftPlayer = CurrentRoom.RemovePlayer(playerIndex+1);
+                    foreach (INetworkEvents networkListener in networkListeners)
+                    {
+                        networkListener.OnPlayerLeft(leftPlayer);
+                    }
+                }
+            }
         }
     }
 }

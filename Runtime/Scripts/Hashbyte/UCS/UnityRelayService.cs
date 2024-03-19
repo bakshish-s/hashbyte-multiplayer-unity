@@ -31,5 +31,10 @@ namespace Hashbyte.Multiplayer
             roomResponse.Success = true;
             return roomResponse;
         }
+
+        public void DisconnectFromRelay()
+        {
+            
+        }
     }
 }

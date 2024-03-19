@@ -18,15 +18,14 @@ namespace Hashbyte.Multiplayer
         public string LobbyId { get; internal set; }
         public bool isHost { get; internal set; }
         public bool isPrivateRoom { get; internal set; }
-        public System.Collections.Generic.List<INetworkPlayer> players;
-        public System.Collections.Generic.List<string> Players { get; internal set; }
+        public System.Collections.Generic.Dictionary<int, INetworkPlayer> players;        
         public System.Collections.Hashtable RoomOptions { get; internal set; }
         public string LobbyCode { get; internal set; }
         public string RoomCode => LobbyCode;        
 
         public GameRoom()
         {
-            players = new System.Collections.Generic.List<INetworkPlayer>();
+            players = new System.Collections.Generic.Dictionary<int, INetworkPlayer>();
             RoomOptions = new System.Collections.Hashtable();
         }
         public GameRoom(string roomId, string lobbyId, bool isHost, System.Collections.Hashtable options)
@@ -36,22 +35,16 @@ namespace Hashbyte.Multiplayer
             this.isHost = isHost;
             RoomOptions = options;
             string[] playerNames = options[Constants.kPlayers].ToString().Split(':');
-            Players = new System.Collections.Generic.List<string>(playerNames);
         }
         public void AddPlayer(INetworkPlayer player)
         {
-            players.Add(player);
+            players.Add(player.ActorNumber, player);
         }
-        public void InsertPlayer(INetworkPlayer player, int index)
+        public INetworkPlayer RemovePlayer(int actorNumber)
         {
-            players.Insert(index, player);
-        }
-        public void AddPlayer(string playerId) { 
-            Players.Add(playerId);
-        }
-
-        public void InsertPlayer(string playerId, int index) {
-            Players.Insert(index, playerId);
+            INetworkPlayer playerToRemove = players[actorNumber];
+            players.Remove(actorNumber);
+            return playerToRemove;
         }
     }
 }

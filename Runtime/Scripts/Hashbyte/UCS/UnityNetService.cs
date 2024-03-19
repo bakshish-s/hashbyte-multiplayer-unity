@@ -17,7 +17,7 @@ namespace Hashbyte.Multiplayer
         private IMultiplayerEvents multiplayerEvents;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
-        {
+        {            
             bool connectionStatus;
             if (!(connectSettings is UnityConnectSettings)) return false;
             UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
@@ -27,6 +27,7 @@ namespace Hashbyte.Multiplayer
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
             else
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation, connectSettings.ConnectionType);
+            Dispose();
             CreateNetworkDriver(relayServerData);
             if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
@@ -86,6 +87,35 @@ namespace Hashbyte.Multiplayer
             }
         }
 
+        public void Disconnect()
+        {
+            if (IsHost) HostDisconnect();
+            else ClientDisconnect();
+            //driver.Dispose();
+        }
+
+        private void HostDisconnect()
+        {
+            if(serverConnections.IsCreated)
+            {
+                for(int i=0; i<serverConnections.Length; i++)
+                {
+                    driver.Disconnect(serverConnections[i]);
+                    serverConnections[i] = default(NetworkConnection);
+                }
+            }            
+        }
+
+        private void ClientDisconnect()
+        {
+            Debug.Log($"Disconnecting");
+            clientConnection.Close(driver);
+            Debug.Log($"Connection closed");
+            driver.Disconnect(clientConnection);
+            Debug.Log($"Disconnected");
+            clientConnection = default(NetworkConnection);
+        }
+
         private void CreateNetworkDriver(RelayServerData relayServerData)
         {
             NetworkSettings networkSettings = new NetworkSettings();
@@ -130,8 +160,8 @@ namespace Hashbyte.Multiplayer
 
                 // Handle Disconnect events.
                 case NetworkEvent.Type.Disconnect:
-                    Debug.Log("Player got disconnected from the Host");
-                    clientConnection = default(NetworkConnection);
+                    Debug.Log($"Disconnection received {dataReader}");
+                    //clientConnection = default(NetworkConnection);
                     break;
             }
         }

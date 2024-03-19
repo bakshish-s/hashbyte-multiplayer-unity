@@ -22,6 +22,7 @@ namespace Hashbyte.Multiplayer
             {
                 multiplayerEventListener = multiplayerEvents;
                 lobbyService.OnPlayersJoined += multiplayerEvents.OnPlayerJoinedRoom;
+                lobbyService.OnPlayersLeft += multiplayerEvents.OnPlayerLeftRoom;
             }
         }
 
@@ -49,10 +50,10 @@ namespace Hashbyte.Multiplayer
             return roomResponse;
         }
 
-        public async Task DeleteRoom(string roomId)
+        public async Task LeaveRoom(GameRoom room)
         {
-            await lobbyService.DeleteLobby(roomId);
-            Debug.Log($"Room Deleted {roomId}");
+            //leave Lobby and disconnect from Relay
+            await lobbyService.LeaveLobby(room.LobbyId, Unity.Services.Authentication.AuthenticationService.Instance.PlayerId);
         }
 
         public async Task<List<string>> FindAvailableRooms()

@@ -36,6 +36,11 @@ namespace Hashbyte.Multiplayer.Demo
             DeactivateAllPanels(lobbyPanel);
             MultiplayerService.Instance.JoinPrivateGame(passCodeField.text);            
         }
+        public void GUI_LeaveGame()
+        {
+            MultiplayerService.Instance.LeaveRoom();
+            DeactivateAllPanels(menuPanel);
+        }
 
         private void DeactivateAllPanels(GameObject panelToShow)
         {
@@ -48,7 +53,7 @@ namespace Hashbyte.Multiplayer.Demo
         public void OnPlayerJoined(INetworkPlayer player)
         {
             Debug.Log($"Player joined in MenuController");
-            waitingMessage.text += $"<b>{player.PlayerName}\n";            
+            waitingMessage.text += $"<b>({player.ActorNumber}) {player.PlayerName}\n";            
         }
 
         void INetworkEvents.OnPlayerConnected()
@@ -100,10 +105,10 @@ namespace Hashbyte.Multiplayer.Demo
                 {
                     waitingMessage.text += $"Room Code\n<size=200%>{room.RoomCode}</size>\n";
                 }
-                foreach(INetworkPlayer player in room.players)
+                foreach(int actorNumber in room.players.Keys)
                 {
                     //Debug.Log($"Player in room {player.PlayerId}, {player.PlayerName}");
-                    waitingMessage.text += $"<b>{player.PlayerName}\n";
+                    waitingMessage.text += $"<b>({actorNumber}) {room.players[actorNumber].PlayerName}\n";
                 }
             }
         }
@@ -111,6 +116,11 @@ namespace Hashbyte.Multiplayer.Demo
         private void OnMultiplayerRoomJoined()
         {
             DeactivateAllPanels(waitingPanel);
-        }        
+        }
+
+        public void OnPlayerLeft(INetworkPlayer player)
+        {
+            waitingMessage.text += $"<color=red>({player.ActorNumber}) {player.PlayerName}\n";
+        }
     }
 }

@@ -54,5 +54,10 @@ namespace Hashbyte.Multiplayer
         {
             
         }
+
+        public void OnPlayerLeft(INetworkPlayer player)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

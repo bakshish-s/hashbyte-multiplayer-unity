@@ -56,6 +56,11 @@ namespace Hashbyte.Multiplayer.Demo
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnPlayerLeft(INetworkPlayer player)
+        {
+            throw new System.NotImplementedException();
+        }
     }
     internal class TileManager
     {
