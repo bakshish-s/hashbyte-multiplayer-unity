@@ -36,7 +36,6 @@ namespace Hashbyte.Multiplayer
             else
             {
                 roomResponse = await CreateRoom(false, roomProperties);
-                multiplayerEventListener?.JoinRoomResponse(roomResponse);
             }
             return roomResponse;
 
@@ -45,7 +44,9 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
             roomResponse = await relayService.CreateRelaySession(Constants.kRegionForServer, new UnityRoomResponse() { Room = new GameRoom() });
-            return await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
+            roomResponse = await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
+            multiplayerEventListener?.JoinRoomResponse(roomResponse);
+            return roomResponse;
         }
 
         public async Task DeleteRoom(string roomId)

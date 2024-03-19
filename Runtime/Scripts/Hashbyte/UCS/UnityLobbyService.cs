@@ -108,6 +108,7 @@ namespace Hashbyte.Multiplayer
         private GameRoom GetGameRoom(Lobby lobby, bool isHost)
         {
             GameRoom gameRoom = new GameRoom();
+            gameRoom.isPrivateRoom = lobby.IsPrivate;
             foreach (string key in lobby.Data.Keys)
             {
                 gameRoom.RoomOptions.Add(key, lobby.Data[key].Value);

@@ -65,7 +65,8 @@ namespace Hashbyte.Multiplayer
         {
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
-            if (roomProperties == null) roomProperties = new Hashtable() { {Constants.kPlayerName, networkPlayer.PlayerId } };            
+            if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
+            else roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             if (roomResponse.Success)
             {
@@ -149,30 +150,30 @@ namespace Hashbyte.Multiplayer
 
         public async Task<string> CreatePrivateGameAsync(Hashtable gameOptions)
         {
-            if (gameOptions == null) gameOptions = new Hashtable();
-            if (networkPlayer != null && !string.IsNullOrEmpty(networkPlayer.PlayerId))
+            if (gameOptions == null) gameOptions = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
+            else gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+            IRoomResponse roomResponse = await roomService.CreateRoom(true, gameOptions);
+            if (roomResponse.Success)
             {
-                gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+                connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
+                networkService.ConnectToServer(connectionSettings);
+                CurrentRoom = roomResponse.Room;                
             }
             else
             {
-                gameOptions.Add(Constants.kPlayerName, "Player_" + DateTime.UtcNow.Ticks.ToString());
+                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
             }
-            IRoomResponse roomResponse = await roomService.CreateRoom(true, gameOptions);
             return roomResponse.Room.RoomId;
+        }
+        public async void JoinPrivateGame(string passcode)
+        {
+            await JoinPrivateGameAsync(passcode);
         }
         public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode)
         {
-            Hashtable gameOptions = new Hashtable();
-            if (networkPlayer != null && !string.IsNullOrEmpty(networkPlayer.PlayerId))
-            {
-                gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
-            }
-            else
-            {
-                gameOptions.Add(Constants.kPlayerName, "Player_" + DateTime.UtcNow.Ticks.ToString());
-            }
-            return await roomService.JoinRoom(passcode, gameOptions);
+
+            Hashtable gameOptions = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
+            return await roomService.JoinRoomByCode(passcode, gameOptions);
         }
         public void Dispose()
         {
@@ -197,11 +198,6 @@ namespace Hashbyte.Multiplayer
                 }
             }
         }
-
-        public void CreateRoomResponse(IRoomResponse roomResponse)
-        {
-
-        }
         /// <summary>
         /// Called when a player joins room created by this player
         /// </summary>
@@ -213,7 +209,12 @@ namespace Hashbyte.Multiplayer
             {
                 foreach (string playerName in playersJoined)
                 {
-                    CurrentRoom.AddPlayer(new NetworkPlayer() { PlayerName = playerName });
+                    NetworkPlayer newPlayer = new NetworkPlayer() { PlayerName = playerName };
+                    CurrentRoom.AddPlayer(newPlayer);
+                    foreach (INetworkEvents networkListener in networkListeners)
+                    {
+                        networkListener.OnPlayerJoined(newPlayer);
+                    }
                 }
             }
         }

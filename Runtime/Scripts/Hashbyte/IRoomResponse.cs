@@ -17,10 +17,12 @@ namespace Hashbyte.Multiplayer
         public string RoomId { get; internal set; }
         public string LobbyId { get; internal set; }
         public bool isHost { get; internal set; }
+        public bool isPrivateRoom { get; internal set; }
         public System.Collections.Generic.List<INetworkPlayer> players;
         public System.Collections.Generic.List<string> Players { get; internal set; }
         public System.Collections.Hashtable RoomOptions { get; internal set; }
         public string LobbyCode { get; internal set; }
+        public string RoomCode => LobbyCode;        
 
         public GameRoom()
         {
