@@ -189,6 +189,10 @@ namespace Hashbyte.Multiplayer
         {
             isGameJoined = true;
             //Ready to start the game
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnPlayerConnected();
+            }
         }
 
         public void JoinRoomResponse(IRoomResponse roomResponse)
