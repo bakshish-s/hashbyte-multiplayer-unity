@@ -176,9 +176,19 @@ namespace Hashbyte.Multiplayer
         }
         public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode)
         {
-
             Hashtable gameOptions = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
-            return await roomService.JoinRoomByCode(passcode, gameOptions);
+            IRoomResponse roomResponse = await roomService.JoinRoomByCode(passcode, gameOptions);
+            if (roomResponse.Success)
+            {
+                connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
+                networkService.ConnectToServer(connectionSettings);
+                CurrentRoom = roomResponse.Room;
+            }
+            else
+            {
+                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
+            }
+            return roomResponse;
         }
         public void Dispose()
         {
@@ -187,6 +197,7 @@ namespace Hashbyte.Multiplayer
 
         public void OnPlayerConnected()
         {
+            Debug.Log("Player Connected");
             isGameJoined = true;
             //Ready to start the game
             foreach (INetworkEvents networkListener in networkListeners)
