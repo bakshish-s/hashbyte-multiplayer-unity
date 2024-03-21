@@ -47,7 +47,7 @@ namespace Hashbyte.Multiplayer
             };
             try
             {
-                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 2, options);
+                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 4, options);
                 Debug.Log($"Lobby {lobby.LobbyCode} {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 IRoomResponse roomResponse = GetSuccessRoomResponse(lobby, true);
@@ -153,6 +153,18 @@ namespace Hashbyte.Multiplayer
         {
             await LobbyService.Instance.RemovePlayerAsync(lobbyId, playerId);
 
+        }
+
+        public async Task GetAvailableLobbies()
+        {            
+            QueryResponse findLobbiesResponse = await LobbyService.Instance.QueryLobbiesAsync();
+            if(findLobbiesResponse.Results != null)
+            {
+                for(int i=0; i<findLobbiesResponse.Results.Count; i++)
+                {
+                    Debug.Log($"Lobby found {findLobbiesResponse.Results[i].LobbyCode}");
+                }
+            }
         }
 
         public async Task UpdateLobbyData(string lobbyId, Hashtable dataToUpdate)

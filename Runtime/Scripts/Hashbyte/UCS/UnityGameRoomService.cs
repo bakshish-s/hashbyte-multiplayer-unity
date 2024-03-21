@@ -23,6 +23,7 @@ namespace Hashbyte.Multiplayer
                 multiplayerEventListener = multiplayerEvents;
                 lobbyService.OnPlayersJoined += multiplayerEvents.OnPlayerJoinedRoom;
                 lobbyService.OnPlayersLeft += multiplayerEvents.OnPlayerLeftRoom;
+                lobbyService.OnLobbyDeleted += multiplayerEvents.OnRoomDeleted;
             }
         }
 
@@ -57,8 +58,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public async Task<List<string>> FindAvailableRooms()
-        {
-            QueryLobbiesOptions queryOptions = new QueryLobbiesOptions();
+        {            
             QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync();
             List<string> availableRooms = new List<string>();
             List<Lobby> availableLobbies = response.Results;
@@ -67,7 +67,7 @@ namespace Hashbyte.Multiplayer
             {
                 if (lobby.Players.Count < 2)
                 {
-                    Debug.Log($"Adding rooms {lobby.Id}");
+                    Debug.Log($"Adding rooms {lobby.LobbyCode}");
                     availableRooms.Add(lobby.LobbyCode);
                 }
             }

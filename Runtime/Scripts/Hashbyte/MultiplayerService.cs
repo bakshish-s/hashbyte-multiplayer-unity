@@ -134,7 +134,7 @@ namespace Hashbyte.Multiplayer
 
         public async void LeaveRoom()
         {            
-            networkService.Disconnect();
+            await networkService.Disconnect();
             if (CurrentRoom != null)
             {
                 if (CurrentRoom.isHost) await roomService.DeleteRoom(CurrentRoom);                
@@ -194,6 +194,15 @@ namespace Hashbyte.Multiplayer
             }
             return roomResponse;
         }
+        public async void FindAvailableRooms()
+        {
+            await FindAvailableRoomsAsync();
+        }
+
+        public async Task FindAvailableRoomsAsync()
+        {
+            await roomService.FindAvailableRooms();
+        }
         public void Dispose()
         {
             networkService?.Dispose();
@@ -241,12 +250,10 @@ namespace Hashbyte.Multiplayer
                 }
             }
         }
-
         public List<INetworkEvents> GetTurnEventListeners()
         {
             return networkListeners;
         }
-
         public void OnPlayerLeftRoom(List<int> playerInices)
         {
             if (CurrentRoom != null)

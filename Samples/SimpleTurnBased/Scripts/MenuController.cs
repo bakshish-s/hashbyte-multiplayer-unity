@@ -42,6 +42,11 @@ namespace Hashbyte.Multiplayer.Demo
             DeactivateAllPanels(menuPanel);
         }
 
+        public void GUI_FindRooms()
+        {
+            MultiplayerService.Instance.FindAvailableRooms();
+        }
+
         private void DeactivateAllPanels(GameObject panelToShow)
         {
             menuPanel.SetActive(false);

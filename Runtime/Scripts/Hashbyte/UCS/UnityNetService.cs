@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
@@ -17,7 +17,7 @@ namespace Hashbyte.Multiplayer
         private IMultiplayerEvents multiplayerEvents;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
-        {            
+        {
             bool connectionStatus;
             if (!(connectSettings is UnityConnectSettings)) return false;
             UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
@@ -27,7 +27,7 @@ namespace Hashbyte.Multiplayer
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
             else
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation, connectSettings.ConnectionType);
-            Dispose();
+            //Dispose();
             CreateNetworkDriver(relayServerData);
             if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
@@ -87,33 +87,40 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public void Disconnect()
+        public async Task Disconnect()
         {
-            if (IsHost) HostDisconnect();
-            else ClientDisconnect();
+            if (IsHost) await HostDisconnect();
+            else await ClientDisconnect();
             //driver.Dispose();
         }
 
-        private void HostDisconnect()
+        private async Task HostDisconnect()
         {
-            if(serverConnections.IsCreated)
+            if (serverConnections.IsCreated)
             {
-                for(int i=0; i<serverConnections.Length; i++)
+                for (int i = 0; i < serverConnections.Length; i++)
                 {
                     driver.Disconnect(serverConnections[i]);
                     serverConnections[i] = default(NetworkConnection);
                 }
-            }            
+            }
+            //Make sure the disconnect event is propagated immediately
+            driver.ScheduleUpdate().Complete();
+            await Task.Delay(500);
+            Dispose();
         }
 
-        private void ClientDisconnect()
+        private async Task ClientDisconnect()
         {
             Debug.Log($"Disconnecting");
             clientConnection.Close(driver);
             Debug.Log($"Connection closed");
             driver.Disconnect(clientConnection);
+            driver.ScheduleUpdate().Complete();
             Debug.Log($"Disconnected");
             clientConnection = default(NetworkConnection);
+            await Task.Delay(500);
+            Dispose();
         }
 
         private void CreateNetworkDriver(RelayServerData relayServerData)
@@ -160,7 +167,11 @@ namespace Hashbyte.Multiplayer
 
                 // Handle Disconnect events.
                 case NetworkEvent.Type.Disconnect:
-                    Debug.Log($"Disconnection received {dataReader}");
+                    var disconnectReason = dataReader.ReadByte();
+                    if ((Unity.Networking.Transport.Error.DisconnectReason)disconnectReason == Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote)
+                    {
+                        Debug.Log($"Disconnection received {disconnectReason} Player left intentionally");
+                    }
                     //clientConnection = default(NetworkConnection);
                     break;
             }
