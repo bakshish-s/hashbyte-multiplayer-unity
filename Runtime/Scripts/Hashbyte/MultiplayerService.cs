@@ -133,9 +133,13 @@ namespace Hashbyte.Multiplayer
         }
 
         public async void LeaveRoom()
-        {
+        {            
             networkService.Disconnect();
-            if (CurrentRoom != null) await roomService.LeaveRoom(CurrentRoom);
+            if (CurrentRoom != null)
+            {
+                if (CurrentRoom.isHost) await roomService.DeleteRoom(CurrentRoom);                
+                else await roomService.LeaveRoom(CurrentRoom);                
+            }
         }
 
         public void SendMove(GameEvent gameMove)
@@ -255,6 +259,15 @@ namespace Hashbyte.Multiplayer
                         networkListener.OnPlayerLeft(leftPlayer);
                     }
                 }
+            }
+        }
+
+        public void OnRoomDeleted()
+        {
+            Debug.Log($"Room Deleted");
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnRoomDeleted();
             }
         }
     }

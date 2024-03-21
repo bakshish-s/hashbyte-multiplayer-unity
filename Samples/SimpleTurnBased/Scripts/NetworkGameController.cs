@@ -61,6 +61,11 @@ namespace Hashbyte.Multiplayer.Demo
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnRoomDeleted()
+        {
+            throw new System.NotImplementedException();
+        }
     }
     internal class TileManager
     {

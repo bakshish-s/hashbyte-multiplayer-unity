@@ -122,5 +122,17 @@ namespace Hashbyte.Multiplayer.Demo
         {
             waitingMessage.text += $"<color=red>({player.ActorNumber}) {player.PlayerName}\n";
         }
+
+        public void OnRoomDeleted()
+        {
+            StartCoroutine(ShowRoomDeleted());
+        }
+
+        IEnumerator ShowRoomDeleted()
+        {
+            waitingMessage.text = "Host deleted room. Closing Game";
+            yield return new WaitForSeconds(2);
+            DeactivateAllPanels(menuPanel);
+        }
     }
 }

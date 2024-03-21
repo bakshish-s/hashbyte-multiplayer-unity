@@ -13,11 +13,14 @@ namespace Hashbyte.Multiplayer
         public event LobbyPlayersJoined OnPlayersJoined;
         public delegate void LobbyPlayersLeft(List<int> playerIndices);
         public event LobbyPlayersLeft OnPlayersLeft;
+        public delegate void LobbyDeletedDelegate();
+        public event LobbyDeletedDelegate OnLobbyDeleted;
         public UnityLobbyService()
         {
             PlayerJoined += OnPlayerJoined;
             PlayerLeft += OnPlayerLeft;
-        }
+            LobbyDeleted += ()=>OnLobbyDeleted?.Invoke();
+        }        
 
         private void OnPlayerLeft(List<int> playersLeft)
         {

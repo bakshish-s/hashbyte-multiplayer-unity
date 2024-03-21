@@ -7,6 +7,7 @@ namespace Hashbyte.Multiplayer
         public void OnPlayerLeft(INetworkPlayer player);
         public void OnPlayerConnected();
         public void OnRoomJoined(GameRoom roomJoined);
+        public void OnRoomDeleted();
         public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;        
     }            
 

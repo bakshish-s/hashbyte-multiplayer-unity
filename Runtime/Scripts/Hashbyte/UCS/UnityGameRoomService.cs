@@ -92,5 +92,10 @@ namespace Hashbyte.Multiplayer
         {
             await lobbyService.UpdateLobbyData(roomID, roomProperties);
         }
+
+        public async Task DeleteRoom(GameRoom room)
+        {
+            await lobbyService.DeleteLobby(room.LobbyId);
+        }
     }
 }

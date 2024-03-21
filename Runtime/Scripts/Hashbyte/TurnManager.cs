@@ -59,5 +59,10 @@ namespace Hashbyte.Multiplayer
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnRoomDeleted()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
