@@ -29,5 +29,7 @@ namespace Hashbyte.Multiplayer
         GAME_MOVE,
         END_TURN,
         GAME_ALIVE,
+        PLAYER_ALIVE,
+        PLAYER_ALIVE_RESPONSE
     }
 }

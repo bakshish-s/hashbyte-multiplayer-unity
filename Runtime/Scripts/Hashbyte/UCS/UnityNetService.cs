@@ -47,7 +47,7 @@ namespace Hashbyte.Multiplayer
             }
             Debug.Log($"Ready to start game ");
             IsConnected = connectionStatus;
-            return connectionStatus;
+            return connectionStatus;            
         }
 
         public void NetworkUpdate()
@@ -62,7 +62,22 @@ namespace Hashbyte.Multiplayer
             if (!driver.IsCreated || !driver.Bound) return;
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
-        }
+            var resp = driver.GetRelayConnectionStatus();
+            switch (resp)
+            {
+                case RelayConnectionStatus.NotEstablished:
+                    Debug.Log("Not Established");
+                    break;
+                case RelayConnectionStatus.Established:
+                    Debug.Log("Established");
+                    break;
+                case RelayConnectionStatus.AllocationInvalid:
+                    Debug.Log($"Allocation Invalid");
+                    break;
+                default:
+                    break;
+            }
+        }        
 
         private void ClientUpdate()
         {
@@ -83,7 +98,7 @@ namespace Hashbyte.Multiplayer
                 while ((eventType = driver.PopEventForConnection(serverConnections[i], out dataReader)) != NetworkEvent.Type.Empty)
                 {
                     ParseEvent();
-                }
+                }                
             }
         }
 
@@ -136,6 +151,7 @@ namespace Hashbyte.Multiplayer
             {
                 if (!serverConnections[i].IsCreated)
                 {
+                    Debug.Log($"Removing stale connection");
                     serverConnections.RemoveAt(i);
                     --i;
                 }
@@ -145,6 +161,25 @@ namespace Hashbyte.Multiplayer
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
+                //HeartbeatPlayer(incomingConnection);
+            }
+        }
+        private int pingsMissed = -1;
+        private async void HeartbeatPlayer(NetworkConnection playerConnection)
+        {
+            GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
+            int eventID = 1;
+            while (incomingConnection.IsCreated)
+            {
+                pingEvent.data = eventID.ToString();
+                SendMove(pingEvent);
+                pingsMissed++;
+                await Task.Delay(1000);
+                eventID++;
+                if(pingsMissed >= 3)
+                {
+                    //Other player is not responding.
+                }
             }
         }
 
@@ -197,6 +232,17 @@ namespace Hashbyte.Multiplayer
                 {
                     gameEvent.data = eventSplit[1];
                 }
+            }
+            if(gameEvent.eventType == GameEventType.PLAYER_ALIVE)
+            {
+                gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
+                //Acknowledge other player
+                SendMove(gameEvent);
+                return;
+            }
+            else if(gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE)
+            {
+                pingsMissed--;
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
