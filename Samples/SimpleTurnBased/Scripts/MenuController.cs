@@ -125,7 +125,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnPlayerLeft(INetworkPlayer player)
         {
-            waitingMessage.text += $"<color=red>({player.ActorNumber}) {player.PlayerName}\n";
+            waitingMessage.text += $"<color=red>({player.ActorNumber}) {player.PlayerName}</color>\n";
         }
 
         public void OnRoomDeleted()
