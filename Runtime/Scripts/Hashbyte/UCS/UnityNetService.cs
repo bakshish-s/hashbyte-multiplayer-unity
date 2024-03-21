@@ -159,7 +159,7 @@ namespace Hashbyte.Multiplayer
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
                 pingsMissed++;
-                await Task.Delay(1000);
+                await Task.Delay(3000);
                 eventID++;
                 if(pingsMissed >= 3)
                 {
@@ -257,8 +257,8 @@ namespace Hashbyte.Multiplayer
                 FixedString32Bytes msg = $"{(int)gameEvent.eventType}:{gameEvent.data}";
                 // Send the message. Aside from FixedString32, many different types can be used.
                 writer.WriteFixedString32(msg);
-                Debug.Log($"Base Event Msg {msg}");
-                driver.EndSend(writer);
+                int endStatus = driver.EndSend(writer);
+                Debug.Log($"Base Event Msg {msg} -- {endStatus}");
             }
             else
             {
