@@ -15,12 +15,15 @@ namespace Hashbyte.Multiplayer
         public event LobbyPlayersLeft OnPlayersLeft;
         public delegate void LobbyDeletedDelegate();
         public event LobbyDeletedDelegate OnLobbyDeleted;
+
+        private string lobbyId;
+        private int lobbyLifespan = 120;
         public UnityLobbyService()
         {
             PlayerJoined += OnPlayerJoined;
             PlayerLeft += OnPlayerLeft;
-            LobbyDeleted += ()=>OnLobbyDeleted?.Invoke();
-        }        
+            LobbyDeleted += () => OnLobbyDeleted?.Invoke();
+        }
 
         private void OnPlayerLeft(List<int> playersLeft)
         {
@@ -33,6 +36,7 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> CreateLobby(Hashtable roomProperties, bool isPrivate, UnityRoomResponse relayResponse)
         {
+            lobbyId = null;
             Dictionary<string, DataObject> data = new Dictionary<string, DataObject>() { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, relayResponse.Room.RoomId) } };
             if (roomProperties != null)
             {
@@ -47,7 +51,9 @@ namespace Hashbyte.Multiplayer
             };
             try
             {
-                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 4, options);
+                Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 2, options);
+                lobbyId = lobby.Id;
+                HeartbeatLobby();
                 Debug.Log($"Lobby {lobby.LobbyCode} {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 IRoomResponse roomResponse = GetSuccessRoomResponse(lobby, true);
@@ -58,6 +64,17 @@ namespace Hashbyte.Multiplayer
             {
                 Debug.Log(ex.Reason.ToString());
                 return GetFailureRoomResponse(ex);
+            }
+        }
+
+        private async void HeartbeatLobby()
+        {
+            while (lobbyLifespan > 0 && !string.IsNullOrEmpty(lobbyId))
+            {
+                await Task.Delay(20000);                
+                lobbyLifespan -= 1;
+                if (string.IsNullOrEmpty(lobbyId)) break;
+                await LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
             }
         }
 
@@ -147,6 +164,7 @@ namespace Hashbyte.Multiplayer
         public async Task DeleteLobby(string lobbyId)
         {
             await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+            lobbyId = null;
         }
 
         public async Task LeaveLobby(string lobbyId, string playerId)
@@ -156,11 +174,11 @@ namespace Hashbyte.Multiplayer
         }
 
         public async Task GetAvailableLobbies()
-        {            
+        {
             QueryResponse findLobbiesResponse = await LobbyService.Instance.QueryLobbiesAsync();
-            if(findLobbiesResponse.Results != null)
+            if (findLobbiesResponse.Results != null)
             {
-                for(int i=0; i<findLobbiesResponse.Results.Count; i++)
+                for (int i = 0; i < findLobbiesResponse.Results.Count; i++)
                 {
                     Debug.Log($"Lobby found {findLobbiesResponse.Results[i].LobbyCode}");
                 }
