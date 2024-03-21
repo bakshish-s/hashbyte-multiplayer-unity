@@ -67,7 +67,8 @@ namespace Hashbyte.Multiplayer
             {
                 if (lobby.Players.Count < 2)
                 {
-                    Debug.Log($"Adding rooms {lobby.LobbyCode}");
+                    Debug.Log($"Adding rooms {lobby.LobbyCode} -- {lobby.Id} -- {lobby.Players.Count} --" +
+                        $"{lobby.MaxPlayers} -- {lobby.Data[Constants.kRoomId].Value}");
                     availableRooms.Add(lobby.LobbyCode);
                 }
             }
