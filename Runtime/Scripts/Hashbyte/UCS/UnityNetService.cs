@@ -62,21 +62,6 @@ namespace Hashbyte.Multiplayer
             if (!driver.IsCreated || !driver.Bound) return;
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
-            var resp = driver.GetRelayConnectionStatus();
-            switch (resp)
-            {
-                case RelayConnectionStatus.NotEstablished:
-                    Debug.Log("Not Established");
-                    break;
-                case RelayConnectionStatus.Established:
-                    Debug.Log("Established");
-                    break;
-                case RelayConnectionStatus.AllocationInvalid:
-                    Debug.Log($"Allocation Invalid");
-                    break;
-                default:
-                    break;
-            }
         }        
 
         private void ClientUpdate()
@@ -161,7 +146,7 @@ namespace Hashbyte.Multiplayer
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
-                //HeartbeatPlayer(incomingConnection);
+                HeartbeatPlayer(incomingConnection);
             }
         }
         private int pingsMissed = -1;
@@ -169,7 +154,7 @@ namespace Hashbyte.Multiplayer
         {
             GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
             int eventID = 1;
-            while (incomingConnection.IsCreated)
+            while (incomingConnection.IsCreated && eventID < 10)
             {
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
@@ -198,6 +183,7 @@ namespace Hashbyte.Multiplayer
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
                     multiplayerEvents.OnPlayerConnected();
+                    HeartbeatPlayer(clientConnection);
                     break;
 
                 // Handle Disconnect events.
@@ -236,8 +222,9 @@ namespace Hashbyte.Multiplayer
             if(gameEvent.eventType == GameEventType.PLAYER_ALIVE)
             {
                 gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
+                Debug.Log("Ping Recieved");
                 //Acknowledge other player
-                SendMove(gameEvent);
+                //SendMove(gameEvent);
                 return;
             }
             else if(gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE)
@@ -264,13 +251,18 @@ namespace Hashbyte.Multiplayer
 
         private void SendMoveToConnection(GameEvent gameEvent, NetworkConnection connection)
         {
-            if (driver.BeginSend(connection, out var writer) == 0)
+            int statusOfSend = driver.BeginSend(connection, out var writer);
+            if (statusOfSend == 0)
             {
                 FixedString32Bytes msg = $"{(int)gameEvent.eventType}:{gameEvent.data}";
                 // Send the message. Aside from FixedString32, many different types can be used.
                 writer.WriteFixedString32(msg);
                 Debug.Log($"Base Event Msg {msg}");
                 driver.EndSend(writer);
+            }
+            else
+            {
+                Debug.Log($"Send failed because of reason {statusOfSend}");
             }
         }
     }
