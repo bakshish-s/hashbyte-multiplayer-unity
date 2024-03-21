@@ -154,7 +154,7 @@ namespace Hashbyte.Multiplayer
         {
             GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
             int eventID = 1;
-            while (incomingConnection.IsCreated && eventID < 10)
+            while (eventID < 10)
             {
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
