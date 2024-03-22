@@ -11,33 +11,14 @@ namespace Hashbyte.Multiplayer.Demo
         public UnityEngine.UI.Image networkIndicator;
 
         private Hashtable seedOption;
-#if UNITY_ANDROID
-        AndroidJavaObject checkNetwork;
-#endif
+
         async void Start()
-        {            
-            AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");            
-            AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");            
-            checkNetwork = new AndroidJavaObject("com.hashbytestudio.checknetwork.CheckNetwork", currentActivity);
-            HearbeatNetwork();
+        {
             DeactivateAllPanels(null);
             seedOption = new Hashtable { { "seed", System.Guid.NewGuid() } };
             MultiplayerService.Instance.RegisterCallbacks(this);
             await MultiplayerService.Instance.Initialize(playerId);
             menuPanel.SetActive(true);
-        }
-
-        public bool IsConnectedToInternet => checkNetwork.Call<bool>("checkNetwork");
-
-        public async void HearbeatNetwork()
-        {
-            int count = 0;
-            while(count < 100)
-            {
-                await System.Threading.Tasks.Task.Delay(1000);
-                networkIndicator.color = IsConnectedToInternet ? Color.green : Color.red;
-                count++;
-            }
         }
 
         public void GUI_StartGame()

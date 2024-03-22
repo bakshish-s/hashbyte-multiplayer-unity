@@ -15,6 +15,7 @@ namespace Hashbyte.Multiplayer
         public GameRoom CurrentRoom { get; private set; }
         public string PlayerId => authService.PlayerId;
         public bool IsHost => CurrentRoom.isHost;
+        public bool IsConnected => internetUtility.IsConnected;
         protected bool isInitialized => authService.IsInitialized;
         private IAuthService authService { get; set; }
         private IGameRoomService roomService { get; set; }
@@ -22,9 +23,10 @@ namespace Hashbyte.Multiplayer
         private IConnectSettings connectionSettings { get; set; }
         private INetworkPlayer networkPlayer { get; set; }
         private List<INetworkEvents> networkListeners;
-
+        private InternetUtility internetUtility;
         public MultiplayerService(ServiceType serviceType)
         {
+            internetUtility = new InternetUtility();
             switch (serviceType)
             {
                 case ServiceType.UNITY:
@@ -276,6 +278,21 @@ namespace Hashbyte.Multiplayer
             {
                 networkListener.OnRoomDeleted();
             }
+        }
+
+        public void LostConnection()
+        {
+            Debug.Log("Lost connection to internet, Try reconnecting");
+        }
+
+        public void OtherPlayerNotResponding()
+        {
+            Debug.Log("Other player not responding, wait for a few seconds before quitting match");
+        }
+
+        public void OnReconnected()
+        {
+            Debug.Log("Regained connection to internet");
         }
     }
 }

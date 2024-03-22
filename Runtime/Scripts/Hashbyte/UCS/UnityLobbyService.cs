@@ -69,12 +69,18 @@ namespace Hashbyte.Multiplayer
 
         private async void HeartbeatLobby()
         {
-            while (lobbyLifespan > 0 && !string.IsNullOrEmpty(lobbyId))
+            try
             {
-                await Task.Delay(20000);                
-                lobbyLifespan -= 1;
-                if (string.IsNullOrEmpty(lobbyId)) break;
-                await LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+                while (lobbyLifespan > 0 && !string.IsNullOrEmpty(lobbyId))
+                {
+                    await Task.Delay(20000);
+                    lobbyLifespan -= 1;
+                    if (string.IsNullOrEmpty(lobbyId)) break;
+                    await LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+                }
+            }catch (LobbyServiceException ex)
+            {
+                Debug.Log(ex.Reason.ToString());
             }
         }
 

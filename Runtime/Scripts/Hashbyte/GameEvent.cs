@@ -30,6 +30,7 @@ namespace Hashbyte.Multiplayer
         END_TURN,
         GAME_ALIVE,
         PLAYER_ALIVE,
-        PLAYER_ALIVE_RESPONSE
+        PLAYER_ALIVE_RESPONSE,
+        PLAYER_RECONNECTED
     }
 }

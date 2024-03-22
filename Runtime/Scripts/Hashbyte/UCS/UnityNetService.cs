@@ -15,6 +15,7 @@ namespace Hashbyte.Multiplayer
         private NetworkEvent.Type eventType;
         private DataStreamReader dataReader;
         private IMultiplayerEvents multiplayerEvents;
+        private bool disconnected;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
@@ -47,7 +48,8 @@ namespace Hashbyte.Multiplayer
             }
             Debug.Log($"Ready to start game ");
             IsConnected = connectionStatus;
-            return connectionStatus;            
+            disconnected = false;
+            return connectionStatus;
         }
 
         public void NetworkUpdate()
@@ -62,7 +64,7 @@ namespace Hashbyte.Multiplayer
             if (!driver.IsCreated || !driver.Bound) return;
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
-        }        
+        }
 
         private void ClientUpdate()
         {
@@ -83,7 +85,7 @@ namespace Hashbyte.Multiplayer
                 while ((eventType = driver.PopEventForConnection(serverConnections[i], out dataReader)) != NetworkEvent.Type.Empty)
                 {
                     ParseEvent();
-                }                
+                }
             }
         }
 
@@ -146,25 +148,61 @@ namespace Hashbyte.Multiplayer
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
-                HeartbeatPlayer(incomingConnection);
+                HeartbeatPlayer();
             }
         }
         private int pingsMissed = -1;
-        private async void HeartbeatPlayer(NetworkConnection playerConnection)
+        private async void HeartbeatPlayer()
         {
             GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
             int eventID = 1;
-            while (eventID < 10)
+            while (eventID < 100 && MultiplayerService.Instance.IsConnected)
             {
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
                 pingsMissed++;
-                await Task.Delay(3000);
+                await Task.Delay(1000);
                 eventID++;
-                if(pingsMissed >= 3)
+                if (pingsMissed >= 3)
                 {
-                    //Other player is not responding.
+                    multiplayerEvents.OtherPlayerNotResponding();
+                    break;
                 }
+            }
+            if (eventID < 100)
+            {
+                if (!MultiplayerService.Instance.IsConnected)
+                {
+                    //Send Disconnected event to player
+                    multiplayerEvents.LostConnection();
+                    disconnected = true;
+                    TryReconnecting();
+                }
+            }
+        }
+
+        private async void TryReconnecting()
+        {
+            int waitTime = 30/*seconds*/;
+            while (waitTime > 0)
+            {
+                await Task.Delay(1000);
+                if (MultiplayerService.Instance.IsConnected)
+                {
+                    multiplayerEvents.OnReconnected();
+                    disconnected = false;
+                    break;
+                }
+                waitTime--;
+            }
+            if (!disconnected)
+            {
+                //Resume game. Ping player for missed moves
+            }
+            else
+            {
+                //Send other player message for player lost connection and end game
+                //Kickoff player 
             }
         }
 
@@ -183,7 +221,7 @@ namespace Hashbyte.Multiplayer
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
                     multiplayerEvents.OnPlayerConnected();
-                    HeartbeatPlayer(clientConnection);
+                    HeartbeatPlayer();
                     break;
 
                 // Handle Disconnect events.
@@ -219,15 +257,15 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
-            if(gameEvent.eventType == GameEventType.PLAYER_ALIVE)
+            if (gameEvent.eventType == GameEventType.PLAYER_ALIVE)
             {
                 gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
                 Debug.Log("Ping Recieved");
                 //Acknowledge other player
-                //SendMove(gameEvent);
+                SendMove(gameEvent);
                 return;
             }
-            else if(gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE)
+            else if (gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE)
             {
                 pingsMissed--;
             }
