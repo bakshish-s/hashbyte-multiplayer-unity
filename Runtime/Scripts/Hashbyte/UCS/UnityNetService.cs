@@ -201,8 +201,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                //Send other player message for player lost connection and end game
-                //Kickoff player 
+                //Was not able to reconnect. Leave game
             }
         }
 

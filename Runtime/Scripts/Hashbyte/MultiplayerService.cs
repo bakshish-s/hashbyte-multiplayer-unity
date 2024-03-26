@@ -282,17 +282,17 @@ namespace Hashbyte.Multiplayer
 
         public void LostConnection()
         {
-            Debug.Log("Lost connection to internet, Try reconnecting");
+            Debug.Log("Bakshish. Lost connection to internet, Try reconnecting");
         }
 
         public void OtherPlayerNotResponding()
         {
-            Debug.Log("Other player not responding, wait for a few seconds before quitting match");
+            Debug.Log("Bakshish. Other player not responding, wait for a few seconds before quitting match");
         }
 
         public void OnReconnected()
         {
-            Debug.Log("Regained connection to internet");
+            Debug.Log("Bakshish. Regained connection to internet");
         }
     }
 }
