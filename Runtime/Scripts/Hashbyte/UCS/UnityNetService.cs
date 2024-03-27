@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+using Unity.Services.Core;
 namespace Hashbyte.Multiplayer
 {
     public class UnityNetService : INetworkService
@@ -19,6 +20,7 @@ namespace Hashbyte.Multiplayer
         private bool disconnected;
         private CancellationTokenSource cancellationTokenSource;
         private CancellationToken cancellationToken;
+        private string roomId;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
@@ -26,6 +28,7 @@ namespace Hashbyte.Multiplayer
             if (!(connectSettings is UnityConnectSettings)) return false;
             UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
             IsHost = unityConnect.RoomResponse.Room.isHost;
+            roomId = unityConnect.RoomResponse.Room.RoomId;
             RelayServerData relayServerData;
             if (IsHost)
                 relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
@@ -55,6 +58,21 @@ namespace Hashbyte.Multiplayer
             return connectionStatus;
         }
 
+        private async void RejoinClientAllocation()
+        {
+            Unity.Services.Relay.Models.JoinAllocation allocation = await Unity.Services.Relay.RelayService.Instance.JoinAllocationAsync(roomId);
+            RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
+            CreateNetworkDriver (relayServerData);
+            if(driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+            {
+                Debug.Log("Failed to bind");
+            }
+            else
+            {
+                clientConnection = driver.Connect();
+            }          
+        }
+
         public void NetworkUpdate()
         {
             BaseUpdate();
@@ -68,6 +86,7 @@ namespace Hashbyte.Multiplayer
             if (driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
             {
                 Debug.Log("Bakshish Relay connection was detroyed. What to do now");
+                //Try to re join the Relay allocation
                 return;
             }
             //Keep relay server alive
@@ -243,15 +262,25 @@ namespace Hashbyte.Multiplayer
 
                 // Handle Disconnect events.
                 case NetworkEvent.Type.Disconnect:
-                    var disconnectReason = dataReader.ReadByte();
-                    if ((Unity.Networking.Transport.Error.DisconnectReason)disconnectReason == Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote)
+                    Unity.Networking.Transport.Error.DisconnectReason disconnectReason = (Unity.Networking.Transport.Error.DisconnectReason)dataReader.ReadByte();
+                    switch (disconnectReason)
                     {
-                        Debug.Log($"Disconnection received {disconnectReason} Player left intentionally");
-                    }
-                    else
-                    {
-                        Debug.Log($"Got disconnected for reason {disconnectReason}");
-                    }
+                        case Unity.Networking.Transport.Error.DisconnectReason.Default:
+                            break;
+                        case Unity.Networking.Transport.Error.DisconnectReason.Timeout:
+                            //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
+                            RejoinClientAllocation();
+                            break;
+                        case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:
+                            break;
+                        case Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote:
+                            Debug.Log($"Disconnection received. Player left intentionally");
+                            break;
+                        case Unity.Networking.Transport.Error.DisconnectReason.Count:
+                            break;
+                        default:
+                            break;
+                    }                   
                     cancellationTokenSource?.Cancel();
                     //clientConnection = default(NetworkConnection);
                     break;

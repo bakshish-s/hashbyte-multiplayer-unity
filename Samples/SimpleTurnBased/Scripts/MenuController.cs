@@ -83,7 +83,7 @@ namespace Hashbyte.Multiplayer.Demo
                 MultiplayerService.Instance.UpdateRoomProperties(roomProperties);
             }
             MultiplayerService.Instance.SetConnection(isConnected);
-
+            networkIndicator.color = MultiplayerService.Instance.IsConnected ? Color.green : Color.red;
         }
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
