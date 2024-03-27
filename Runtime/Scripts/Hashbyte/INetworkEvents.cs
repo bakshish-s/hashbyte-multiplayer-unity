@@ -6,9 +6,12 @@ namespace Hashbyte.Multiplayer
         public void OnPlayerJoined(INetworkPlayer player);
         public void OnPlayerLeft(INetworkPlayer player);
         public void OnPlayerConnected();
+        public void OnPlayerDisconnected();
+        public void OnPlayerReconnected();
+        public void OnConnectionStatusChange(bool connected);
         public void OnRoomJoined(GameRoom roomJoined);
         public void OnRoomDeleted();
-        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;        
+        public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;                
     }            
 
     public enum NetworkErrorCode

@@ -4,11 +4,11 @@ namespace Hashbyte.Multiplayer
     public class InternetUtility
     {
 
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_EDITOR
+        public bool IsConnected = true;
+#elif UNITY_ANDROID
         public bool IsConnected => checkNetwork.Call<bool>("checkNetwork");
         private AndroidJavaObject checkNetwork;
-#else
-        public bool IsConnected => true;
 #endif
         public InternetUtility()
         {

@@ -66,6 +66,21 @@ namespace Hashbyte.Multiplayer.Demo
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnPlayerDisconnected()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnPlayerReconnected()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnConnectionStatusChange(bool connected)
+        {
+            throw new System.NotImplementedException();
+        }
     }
     internal class TileManager
     {

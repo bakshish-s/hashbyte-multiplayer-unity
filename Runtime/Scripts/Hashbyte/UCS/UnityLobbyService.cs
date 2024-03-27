@@ -22,7 +22,11 @@ namespace Hashbyte.Multiplayer
         {
             PlayerJoined += OnPlayerJoined;
             PlayerLeft += OnPlayerLeft;
-            LobbyDeleted += () => OnLobbyDeleted?.Invoke();
+            LobbyDeleted += () =>
+            {
+                OnLobbyDeleted?.Invoke();
+                lobbyId = null;
+            };
         }
 
         private void OnPlayerLeft(List<int> playersLeft)
@@ -78,7 +82,8 @@ namespace Hashbyte.Multiplayer
                     if (string.IsNullOrEmpty(lobbyId)) break;
                     await LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
                 }
-            }catch (LobbyServiceException ex)
+            }
+            catch (LobbyServiceException ex)
             {
                 Debug.Log(ex.Reason.ToString());
             }

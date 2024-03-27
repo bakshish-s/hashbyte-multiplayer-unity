@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
 {
@@ -9,7 +10,7 @@ namespace Hashbyte.Multiplayer.Demo
         public UnityEngine.UI.Button playButton;
         public TMPro.TextMeshProUGUI waitingMessage;
         public UnityEngine.UI.Image networkIndicator;
-
+        public bool isConnected;
         private Hashtable seedOption;
 
         async void Start()
@@ -22,21 +23,21 @@ namespace Hashbyte.Multiplayer.Demo
         }
 
         public void GUI_StartGame()
-        {                   
-            DeactivateAllPanels(lobbyPanel);            
-            MultiplayerService.Instance.JoinOrCreateGame(seedOption);            
+        {
+            DeactivateAllPanels(lobbyPanel);
+            MultiplayerService.Instance.JoinOrCreateGame(seedOption);
         }
 
         public void CreatePrivateGame()
-        {                        
+        {
             DeactivateAllPanels(lobbyPanel);
-            MultiplayerService.Instance.CreatePrivateGame(seedOption);            
+            MultiplayerService.Instance.CreatePrivateGame(seedOption);
         }
 
         public void GUI_JoinAsyncGame(TMPro.TMP_InputField passCodeField)
-        {                        
+        {
             DeactivateAllPanels(lobbyPanel);
-            MultiplayerService.Instance.JoinPrivateGame(passCodeField.text);            
+            MultiplayerService.Instance.JoinPrivateGame(passCodeField.text);
         }
         public void GUI_LeaveGame()
         {
@@ -60,7 +61,7 @@ namespace Hashbyte.Multiplayer.Demo
         public void OnPlayerJoined(INetworkPlayer player)
         {
             Debug.Log($"Player joined in MenuController");
-            waitingMessage.text += $"<b>({player.ActorNumber}) {player.PlayerName}\n";            
+            waitingMessage.text += $"<b>({player.ActorNumber}) {player.PlayerName}\n";
         }
 
         void INetworkEvents.OnPlayerConnected()
@@ -73,7 +74,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         private void Update()
         {
-            if(Input.GetKeyDown(KeyCode.U))
+            if (Input.GetKeyDown(KeyCode.U))
             {
                 Hashtable roomProperties = new Hashtable
                 {
@@ -81,6 +82,8 @@ namespace Hashbyte.Multiplayer.Demo
                 };
                 MultiplayerService.Instance.UpdateRoomProperties(roomProperties);
             }
+            MultiplayerService.Instance.SetConnection(isConnected);
+
         }
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
@@ -97,14 +100,14 @@ namespace Hashbyte.Multiplayer.Demo
         public void OnRoomJoined(GameRoom room)
         {
             Debug.Log($"Room joined succesfully");
-            if(room != null)
+            if (room != null)
             {
                 waitingMessage.text = "Room Joined\n";
                 //Debug.Log($"Host {room.isHost}, Lobby Code {room.LobbyCode}," +
                 //    $" Lobby Id {room.LobbyId}, Room Id {room.RoomId} ");
                 waitingMessage.text += $"<b>{room.LobbyCode}--{room.RoomId}\n{room.RoomOptions["seed"]}\n";
                 OnMultiplayerRoomJoined();
-                foreach(string key in room.RoomOptions.Keys)
+                foreach (string key in room.RoomOptions.Keys)
                 {
                     Debug.Log($"Options in room {key} -- {room.RoomOptions[key]}");
                 }
@@ -112,7 +115,7 @@ namespace Hashbyte.Multiplayer.Demo
                 {
                     waitingMessage.text += $"Room Code\n<size=200%>{room.RoomCode}</size>\n";
                 }
-                foreach(int actorNumber in room.players.Keys)
+                foreach (int actorNumber in room.players.Keys)
                 {
                     //Debug.Log($"Player in room {player.PlayerId}, {player.PlayerName}");
                     waitingMessage.text += $"<b>({actorNumber}) {room.players[actorNumber].PlayerName}\n";
@@ -140,6 +143,30 @@ namespace Hashbyte.Multiplayer.Demo
             waitingMessage.text = "Host deleted room. Closing Game";
             yield return new WaitForSeconds(2);
             DeactivateAllPanels(menuPanel);
+        }
+
+        void INetworkEvents.OnPlayerDisconnected()
+        {
+            waitingMessage.text += "<color=yellow>Other Player Disconnected</color>\n";
+        }
+
+        public void OnPlayerReconnected()
+        {
+            waitingMessage.text += "<color=green>Other Player Reconnected</color>\n";
+        }
+
+        public void OnConnectionStatusChange(bool connected)
+        {
+            if (connected)
+            {
+                networkIndicator.color = Color.green;
+                waitingMessage.text += "<color=green>INTERNET ON</color>\n";
+            }
+            else
+            {
+                networkIndicator.color = Color.red;
+                waitingMessage.text += "<color=red>INTERNET OFF</color>\n";
+            }
         }
     }
 }

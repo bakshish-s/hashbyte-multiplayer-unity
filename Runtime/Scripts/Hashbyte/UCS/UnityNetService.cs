@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Networking.Transport;
@@ -16,6 +17,8 @@ namespace Hashbyte.Multiplayer
         private DataStreamReader dataReader;
         private IMultiplayerEvents multiplayerEvents;
         private bool disconnected;
+        private CancellationTokenSource cancellationTokenSource;
+        private CancellationToken cancellationToken;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
@@ -62,6 +65,11 @@ namespace Hashbyte.Multiplayer
         private void BaseUpdate()
         {
             if (!driver.IsCreated || !driver.Bound) return;
+            if(driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
+            {
+                Debug.Log("Bakshish Relay connection was detroyed. What to do now");
+                return;
+            }
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
         }
@@ -92,7 +100,7 @@ namespace Hashbyte.Multiplayer
         public async Task Disconnect()
         {
             if (IsHost) await HostDisconnect();
-            else await ClientDisconnect();
+            else await ClientDisconnect();            
             //driver.Dispose();
         }
 
@@ -148,6 +156,8 @@ namespace Hashbyte.Multiplayer
                 Debug.Log($"Player joined {incomingConnection}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
+                cancellationTokenSource = new CancellationTokenSource();
+                cancellationToken = cancellationTokenSource.Token;
                 HeartbeatPlayer();
             }
         }
@@ -156,10 +166,12 @@ namespace Hashbyte.Multiplayer
         {
             GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
             int eventID = 1;
-            while (eventID < 100 && MultiplayerService.Instance.IsConnected)
+            Debug.Log($"Bakshish Heartbeat starting {eventID} -- {cancellationToken.IsCancellationRequested}");
+            while (eventID < 100 && MultiplayerService.Instance.IsConnected && !cancellationToken.IsCancellationRequested)
             {
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
+                Debug.Log("Ping");
                 pingsMissed++;
                 await Task.Delay(1000);
                 eventID++;
@@ -179,18 +191,19 @@ namespace Hashbyte.Multiplayer
                     TryReconnecting();
                 }
             }
-        }
+        }        
 
         private async void TryReconnecting()
         {
-            int waitTime = 30/*seconds*/;
+            int waitTime = 60/*seconds*/;
             while (waitTime > 0)
             {
                 await Task.Delay(1000);
-                if (MultiplayerService.Instance.IsConnected)
+                if (MultiplayerService.Instance.IsConnected && !cancellationToken.IsCancellationRequested)
                 {
                     multiplayerEvents.OnReconnected();
                     disconnected = false;
+                    SendMove(new GameEvent() { eventType = GameEventType.PLAYER_RECONNECTED });
                     break;
                 }
                 waitTime--;
@@ -198,10 +211,13 @@ namespace Hashbyte.Multiplayer
             if (!disconnected)
             {
                 //Resume game. Ping player for missed moves
+                Debug.Log("Bakshish. Player reconnected to server now");
+                HeartbeatPlayer();
             }
             else
             {
                 //Was not able to reconnect. Leave game
+                Debug.Log("Bakshish. Player failed to reconnect in 60 seconds to server");
             }
         }
 
@@ -212,13 +228,15 @@ namespace Hashbyte.Multiplayer
                 // Handle Relay events.
                 case NetworkEvent.Type.Data:
                     Unity.Collections.FixedString32Bytes msg = dataReader.ReadFixedString32();
-                    Debug.Log($"Player received msg: {msg}");
+                    //Debug.Log($"Player received msg: {msg}");
                     ReceiveEvent(msg);
                     break;
 
                 // Handle Connect events.
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
+                    cancellationTokenSource = new CancellationTokenSource();
+                    cancellationToken = cancellationTokenSource.Token;
                     multiplayerEvents.OnPlayerConnected();
                     HeartbeatPlayer();
                     break;
@@ -229,7 +247,8 @@ namespace Hashbyte.Multiplayer
                     if ((Unity.Networking.Transport.Error.DisconnectReason)disconnectReason == Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote)
                     {
                         Debug.Log($"Disconnection received {disconnectReason} Player left intentionally");
-                    }
+                    } 
+                    cancellationTokenSource.Cancel();
                     //clientConnection = default(NetworkConnection);
                     break;
             }
@@ -241,6 +260,8 @@ namespace Hashbyte.Multiplayer
             if (driver.IsCreated) driver.Dispose();
             incomingConnection = default(NetworkConnection);
             clientConnection = default(NetworkConnection);
+            cancellationTokenSource.Cancel();
+            cancellationTokenSource.Dispose();
         }
 
         public virtual void ReceiveEvent(FixedString32Bytes eventData)
@@ -256,17 +277,24 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
-            if (gameEvent.eventType == GameEventType.PLAYER_ALIVE)
+            if (gameEvent.eventType == GameEventType.PLAYER_ALIVE && MultiplayerService.Instance.IsConnected)
             {
                 gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
-                Debug.Log("Ping Recieved");
+                Debug.Log("Ping Recieved, Returning");
                 //Acknowledge other player
                 SendMove(gameEvent);
                 return;
             }
-            else if (gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE)
+            else if (gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE && MultiplayerService.Instance.IsConnected)
             {
                 pingsMissed--;
+                return;
+            }else if(gameEvent.eventType == GameEventType.PLAYER_RECONNECTED && MultiplayerService.Instance.IsConnected)
+            {
+                multiplayerEvents.OnOtherPlayerReconnected();
+                pingsMissed = 0;                
+                HeartbeatPlayer();
+                return;
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
@@ -295,11 +323,11 @@ namespace Hashbyte.Multiplayer
                 // Send the message. Aside from FixedString32, many different types can be used.
                 writer.WriteFixedString32(msg);
                 int endStatus = driver.EndSend(writer);
-                Debug.Log($"Base Event Msg {msg} -- {endStatus}");
+                //Debug.Log($"Base Event Msg {msg} -- {endStatus}");
             }
             else
             {
-                Debug.Log($"Send failed because of reason {statusOfSend}");
+                //Debug.Log($"Send failed because of reason {statusOfSend}");
             }
         }
     }

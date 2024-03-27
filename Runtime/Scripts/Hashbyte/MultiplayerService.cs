@@ -24,6 +24,10 @@ namespace Hashbyte.Multiplayer
         private INetworkPlayer networkPlayer { get; set; }
         private List<INetworkEvents> networkListeners;
         private InternetUtility internetUtility;
+        public void SetConnection(bool connection)
+        {
+            //internetUtility.IsConnected = connection;
+        }
         public MultiplayerService(ServiceType serviceType)
         {
             internetUtility = new InternetUtility();
@@ -151,7 +155,8 @@ namespace Hashbyte.Multiplayer
 
         public void Update()
         {
-            networkService?.NetworkUpdate();
+            if(IsConnected)
+                networkService?.NetworkUpdate();
         }
 
         public async void CreatePrivateGame(Hashtable gameOptions)
@@ -283,16 +288,37 @@ namespace Hashbyte.Multiplayer
         public void LostConnection()
         {
             Debug.Log("Bakshish. Lost connection to internet, Try reconnecting");
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnConnectionStatusChange(false);
+            }
         }
 
         public void OtherPlayerNotResponding()
         {
             Debug.Log("Bakshish. Other player not responding, wait for a few seconds before quitting match");
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnPlayerDisconnected();
+            }
         }
 
         public void OnReconnected()
         {
             Debug.Log("Bakshish. Regained connection to internet");
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnConnectionStatusChange(true);
+            }
+        }
+
+        public void OnOtherPlayerReconnected()
+        {
+            Debug.Log("Bakshish. Other player rejoined match.");
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnPlayerReconnected();
+            }
         }
     }
 }
