@@ -65,7 +65,7 @@ namespace Hashbyte.Multiplayer
         private void BaseUpdate()
         {
             if (!driver.IsCreated || !driver.Bound) return;
-            if(driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
+            if (driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
             {
                 Debug.Log("Bakshish Relay connection was detroyed. What to do now");
                 return;
@@ -100,7 +100,7 @@ namespace Hashbyte.Multiplayer
         public async Task Disconnect()
         {
             if (IsHost) await HostDisconnect();
-            else await ClientDisconnect();            
+            else await ClientDisconnect();
             //driver.Dispose();
         }
 
@@ -171,7 +171,7 @@ namespace Hashbyte.Multiplayer
             {
                 pingEvent.data = eventID.ToString();
                 SendMove(pingEvent);
-                Debug.Log("Ping");
+                //Debug.Log("Ping");
                 pingsMissed++;
                 await Task.Delay(1000);
                 eventID++;
@@ -191,7 +191,7 @@ namespace Hashbyte.Multiplayer
                     TryReconnecting();
                 }
             }
-        }        
+        }
 
         private async void TryReconnecting()
         {
@@ -247,8 +247,12 @@ namespace Hashbyte.Multiplayer
                     if ((Unity.Networking.Transport.Error.DisconnectReason)disconnectReason == Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote)
                     {
                         Debug.Log($"Disconnection received {disconnectReason} Player left intentionally");
-                    } 
-                    cancellationTokenSource.Cancel();
+                    }
+                    else
+                    {
+                        Debug.Log($"Got disconnected for reason {disconnectReason}");
+                    }
+                    cancellationTokenSource?.Cancel();
                     //clientConnection = default(NetworkConnection);
                     break;
             }
@@ -260,8 +264,11 @@ namespace Hashbyte.Multiplayer
             if (driver.IsCreated) driver.Dispose();
             incomingConnection = default(NetworkConnection);
             clientConnection = default(NetworkConnection);
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
+            }
         }
 
         public virtual void ReceiveEvent(FixedString32Bytes eventData)
@@ -280,7 +287,7 @@ namespace Hashbyte.Multiplayer
             if (gameEvent.eventType == GameEventType.PLAYER_ALIVE && MultiplayerService.Instance.IsConnected)
             {
                 gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
-                Debug.Log("Ping Recieved, Returning");
+                //Debug.Log("Ping Recieved, Returning");
                 //Acknowledge other player
                 SendMove(gameEvent);
                 return;
@@ -289,10 +296,11 @@ namespace Hashbyte.Multiplayer
             {
                 pingsMissed--;
                 return;
-            }else if(gameEvent.eventType == GameEventType.PLAYER_RECONNECTED && MultiplayerService.Instance.IsConnected)
+            }
+            else if (gameEvent.eventType == GameEventType.PLAYER_RECONNECTED && MultiplayerService.Instance.IsConnected)
             {
                 multiplayerEvents.OnOtherPlayerReconnected();
-                pingsMissed = 0;                
+                pingsMissed = 0;
                 HeartbeatPlayer();
                 return;
             }
