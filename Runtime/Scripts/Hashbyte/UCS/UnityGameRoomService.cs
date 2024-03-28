@@ -44,16 +44,16 @@ namespace Hashbyte.Multiplayer
         }
         public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
         {
-            (Unity.Services.Relay.Models.Allocation, string) relayAllocation = await UnityRelayService.Instance.CreateRelaySession();
-            if (relayAllocation.Item1 != null)
+            bool success = await UnityRelayService.Instance.CreateRelaySession();
+            if (success)
             {
-                ((UnityRoomResponse)roomResponse).hostAllocation = relayAllocation.Item1;
-                roomResponse.Room.RoomId = relayAllocation.Item2;
+                ((UnityRoomResponse)roomResponse).hostAllocation = UnityRelayService.Instance.HostAllocation;
+                roomResponse.Room.RoomId = UnityRelayService.Instance.JoinCode;
                 return roomResponse;
             }
             else
             {
-                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = relayAllocation.Item2 } };                
+                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };                
             }            
             roomResponse = await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
             multiplayerEventListener?.JoinRoomResponse(roomResponse);

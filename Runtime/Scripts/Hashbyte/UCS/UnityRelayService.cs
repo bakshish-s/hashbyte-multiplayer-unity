@@ -18,18 +18,21 @@ namespace Hashbyte.Multiplayer
         }
         private UnityRelayService() { }
         #endregion        
-        public async Task<(Allocation, string)> CreateRelaySession()
+        public Allocation HostAllocation{get; private set;}
+        public JoinAllocation ClientAllocation { get; private set; }
+        public string JoinCode{get; private set;}
+        public async Task<bool> CreateRelaySession()
         {
             try
             {
-                Allocation allocation = await RelayService.Instance.CreateAllocationAsync(Constants.kMaxPlayers, Constants.kRegionForServer);
-                string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-                return (allocation, joinCode);
+                HostAllocation = await RelayService.Instance.CreateAllocationAsync(Constants.kMaxPlayers, Constants.kRegionForServer);
+                string joinCode = await RelayService.Instance.GetJoinCodeAsync(HostAllocation.AllocationId);
+                return true;
             }
             catch (RelayServiceException exception)
             {
                 Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
-                return (null, exception.Message);
+                return false;
             }
         }
 
