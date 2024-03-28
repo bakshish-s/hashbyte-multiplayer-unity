@@ -9,6 +9,7 @@ namespace Hashbyte.Multiplayer.Demo
         public GameObject menuPanel, lobbyPanel, waitingPanel;
         public UnityEngine.UI.Button playButton;
         public TMPro.TextMeshProUGUI waitingMessage;
+        public TMPro.TextMeshProUGUI pingMessage;
         public UnityEngine.UI.Image networkIndicator;
         public bool isConnected;
         private Hashtable seedOption;
@@ -68,9 +69,36 @@ namespace Hashbyte.Multiplayer.Demo
         {
             playButton.interactable = true;
         }
-
+        int ping = 0; int pong = 0; int timeer = 0;
         public void OnNetworkMessage(GameEvent gameEvent)
-        { }
+        {
+            switch (gameEvent.eventType)
+            {
+                case GameEventType.GAME_STARTED:
+                    break;
+                case GameEventType.GAME_ENDED:
+                    break;
+                case GameEventType.GAME_MOVE:
+                    break;
+                case GameEventType.END_TURN:
+                    break;
+                case GameEventType.GAME_ALIVE:
+                    timeer--;
+                    pingMessage.text = $"Timer {timeer}";
+                    break;
+                case GameEventType.PING:
+                    ping++;                    
+                    break;
+                case GameEventType.PONG:
+                    pong++;
+                    break;
+                case GameEventType.PLAYER_RECONNECTED:
+                    break;
+                default:
+                    break;
+            }
+                    pingMessage.text = $"Ping/Pong {ping}/{pong}";
+        }
 
         private void Update()
         {
@@ -88,7 +116,8 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
-            //Debug.Log("Room properties updated");
+            Debug.Log("Room properties updated");
+
             //waitingMessage.text = "Players in game\n";
             //if (MultiplayerService.Instance.CurrentRoom == null) return;
             //for (int i = 0; i < MultiplayerService.Instance.CurrentRoom.Players.Count; i++)
@@ -147,7 +176,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         void INetworkEvents.OnPlayerDisconnected()
         {
-            waitingMessage.text += "<color=yellow>Other Player Disconnected</color>\n";
+            waitingMessage.text += "<color=orange>Other Player Disconnected</color>\n";
         }
 
         public void OnPlayerReconnected()

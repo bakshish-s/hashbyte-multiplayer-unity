@@ -31,6 +31,7 @@ namespace Hashbyte.Multiplayer
         public MultiplayerService(ServiceType serviceType)
         {
             internetUtility = new InternetUtility();
+            internetUtility.OnConnectionStatusChange += OnConnected;
             switch (serviceType)
             {
                 case ServiceType.UNITY:
@@ -47,6 +48,11 @@ namespace Hashbyte.Multiplayer
                     break;
             }
             networkListeners = new List<INetworkEvents>();
+        }
+
+        private void OnConnected(bool connected)
+        {
+            Debug.Log($"Internet connection status {connected}");
         }
 
         public async Task Initialize(string playerId)
@@ -72,7 +78,7 @@ namespace Hashbyte.Multiplayer
             Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null);
             if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
-            else if(!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
+            else if (!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             if (roomResponse.Success)
             {
@@ -135,16 +141,32 @@ namespace Hashbyte.Multiplayer
         */
         public void UpdateRoomProperties(Hashtable roomData)
         {
-            roomService.UpdateRoomProperties(CurrentRoom.LobbyId, roomData);
+            UpdateRoomPropertiesAsync(roomData);
+        }
+
+        public async void UpdateRoomPropertiesAsync(Hashtable roomData)
+        {
+            Debug.Log("Updating room properties");
+            roomData = await roomService.UpdateRoomProperties(CurrentRoom.LobbyId, roomData);
+            Debug.Log($"Room properties updated {roomData}");
+            CurrentRoom.RoomOptions = roomData;
+            foreach (string key in roomData.Keys)
+            {
+                Debug.Log($"Lobby data updated {roomData[key]}");
+            }
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnRoomPropertiesUpdated(roomData);
+            }            
         }
 
         public async void LeaveRoom()
-        {            
+        {
             await networkService.Disconnect();
             if (CurrentRoom != null)
             {
-                if (CurrentRoom.isHost) await roomService.DeleteRoom(CurrentRoom);                
-                else await roomService.LeaveRoom(CurrentRoom);                
+                if (CurrentRoom.isHost) await roomService.DeleteRoom(CurrentRoom);
+                else await roomService.LeaveRoom(CurrentRoom);
             }
         }
 
@@ -155,7 +177,7 @@ namespace Hashbyte.Multiplayer
 
         public void Update()
         {
-            if(IsConnected)
+            if (IsConnected)
                 networkService?.NetworkUpdate();
         }
 
@@ -213,6 +235,7 @@ namespace Hashbyte.Multiplayer
         public void Dispose()
         {
             networkService?.Dispose();
+            internetUtility?.Dispose();
         }
 
         public void OnPlayerConnected()
@@ -267,7 +290,7 @@ namespace Hashbyte.Multiplayer
             {
                 foreach (int playerIndex in playerInices)
                 {
-                    INetworkPlayer leftPlayer = CurrentRoom.RemovePlayer(playerIndex+1);
+                    INetworkPlayer leftPlayer = CurrentRoom.RemovePlayer(playerIndex + 1);
                     foreach (INetworkEvents networkListener in networkListeners)
                     {
                         networkListener.OnPlayerLeft(leftPlayer);
@@ -305,7 +328,7 @@ namespace Hashbyte.Multiplayer
 
         public void OnReconnected()
         {
-            Debug.Log("Bakshish. Regained connection to internet");
+            //Debug.Log("Bakshish. Regained connection to internet");
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnConnectionStatusChange(true);
@@ -319,6 +342,24 @@ namespace Hashbyte.Multiplayer
             {
                 networkListener.OnPlayerReconnected();
             }
+        }
+
+        public void OnRoomDataUpdated(Dictionary<string, object> data)
+        {
+            Debug.Log($"Room data updated by host");
+            if (CurrentRoom.isHost) return;
+            foreach(string key in data.Keys)
+            {
+                Debug.Log($"{key}: {data[key]}");
+            }
+            if (data == null || !data.ContainsKey(Constants.kRoomId)) return;
+            RejoinAllocation(data[Constants.kRoomId].ToString());
+        }
+
+        private async void RejoinAllocation(string roomId)
+        {
+            await networkService.Disconnect();
+            await ((UnityNetService)networkService).RejoinClientAllocation(roomId);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Collections;
@@ -58,19 +59,19 @@ namespace Hashbyte.Multiplayer
             return connectionStatus;
         }
 
-        private async void RejoinClientAllocation()
+        public async Task RejoinClientAllocation(string allocationId)
         {
-            Unity.Services.Relay.Models.JoinAllocation allocation = await Unity.Services.Relay.RelayService.Instance.JoinAllocationAsync(roomId);
+            Unity.Services.Relay.Models.JoinAllocation allocation = await Unity.Services.Relay.RelayService.Instance.JoinAllocationAsync(allocationId);
             RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
-            CreateNetworkDriver (relayServerData);
-            if(driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+            CreateNetworkDriver(relayServerData);
+            if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
                 Debug.Log("Failed to bind");
             }
             else
             {
                 clientConnection = driver.Connect();
-            }          
+            }
         }
 
         public void NetworkUpdate()
@@ -79,16 +80,15 @@ namespace Hashbyte.Multiplayer
             if (IsHost) HostUpdate();
             else ClientUpdate();
         }
-
         private void BaseUpdate()
         {
             if (!driver.IsCreated || !driver.Bound) return;
-            if (driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
-            {
-                Debug.Log("Bakshish Relay connection was detroyed. What to do now");
-                //Try to re join the Relay allocation
-                return;
-            }
+            //Debug.Log($"Relay connection status {driver.GetRelayConnectionStatus()}");
+            //if(driver.GetRelayConnectionStatus() != RelayConnectionStatus.Established)
+            //{
+            //    Dispose();
+            //    return;
+            //}                        
             //Keep relay server alive
             driver.ScheduleUpdate().Complete();
         }
@@ -115,6 +115,111 @@ namespace Hashbyte.Multiplayer
                 }
             }
         }
+        float timeForNextPing = 5;
+        bool pongReceived;
+        GameEvent ping = new GameEvent() { eventType = GameEventType.PING };
+        private async void CheckPingHost()
+        {
+            //Wait one second before sending next ping
+            await Task.Delay(1000);
+            pongReceived = false;
+            timeForNextPing = 20;
+            DateTime startTime = DateTime.Now;
+            SendMove(ping);
+            GameEvent gameEvent = new GameEvent() { eventType = GameEventType.GAME_ALIVE };
+            while (!pongReceived && timeForNextPing > 0)
+            {
+                await Task.Yield();
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
+                if (!MultiplayerService.Instance.IsConnected)
+                {
+                    //I lost connection to internet. Immediately tell user
+                    multiplayerEvents.LostConnection();
+                    TryReconnecting();
+                    break;
+                }
+                timeForNextPing = (float)(20 - (DateTime.Now - startTime).TotalSeconds);
+            }
+            if (!pongReceived && MultiplayerService.Instance.IsConnected)
+            {
+                multiplayerEvents.OtherPlayerNotResponding();
+            }
+        }
+        bool pingReceived;
+        private async void CheckPingClient()
+        {
+            await Task.Delay(900);
+            pingReceived = false;
+            timeForNextPing = 5;
+            DateTime startTime = DateTime.Now;
+            while (!pingReceived && timeForNextPing > 0)
+            {
+                await Task.Yield();
+                if (!MultiplayerService.Instance.IsConnected)
+                {
+                    //I lost connection to internet. Immediately tell user
+                    Debug.Log("Bakshish. Lost Connection --- ");
+                    multiplayerEvents.LostConnection();
+                    TryReconnecting();
+                    break;
+                }
+                timeForNextPing = (float)(5 - (DateTime.Now - startTime).TotalSeconds);
+            }
+            if (!pingReceived && MultiplayerService.Instance.IsConnected)
+            {
+                multiplayerEvents.OtherPlayerNotResponding();
+            }
+        }
+        private async void DisconnectAndRecover()
+        {
+            Debug.Log("Disconnecting");
+            await Disconnect();
+            //We might still be in lobby, if we were host let's try to create new relay allocation and give it to other player using roomperoperties
+            if (IsHost)
+            {
+                Debug.Log("Creating new allocation now");
+                Unity.Services.Relay.Models.Allocation allocation = await Unity.Services.Relay.RelayService.Instance.CreateAllocationAsync(Constants.kMaxPlayers, Constants.kRegionForServer);
+                Debug.Log($"Allocation created {allocation.AllocationId}");
+                string roomId = await Unity.Services.Relay.RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                Debug.Log($"New Room ID generated {roomId}");
+                //Should create new network driver here as well
+                RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
+                CreateNetworkDriver(relayServerData);
+                if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+                {
+                    Debug.Log($"Binding failed");
+                }
+                else
+                {
+                    if(driver.Listen() != 0)
+                    {
+                        Debug.Log("Listening failed");
+                    }
+                    else
+                    {
+                        serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
+                    }
+                }
+                MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, roomId } });
+            }
+            else
+            {
+                Debug.Log("Joining allocation again");
+                Unity.Services.Relay.Models.JoinAllocation allocation = await Unity.Services.Relay.RelayService.Instance.JoinAllocationAsync(roomId);
+                Debug.Log("Allocation joined");
+                RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
+                CreateNetworkDriver(relayServerData);
+                if(driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+                {
+                    Debug.Log($"Binding failed");
+                }
+                else
+                {
+                    Debug.Log("Binding succesfull, asking host to accept connection");
+                    clientConnection = driver.Connect();
+                }
+            }
+        }
 
         public async Task Disconnect()
         {
@@ -133,8 +238,9 @@ namespace Hashbyte.Multiplayer
                     serverConnections[i] = default(NetworkConnection);
                 }
             }
-            //Make sure the disconnect event is propagated immediately
-            driver.ScheduleUpdate().Complete();
+            if (driver.IsCreated)
+                //Make sure the disconnect event is propagated immediately
+                driver.ScheduleUpdate().Complete();
             await Task.Delay(500);
             Dispose();
         }
@@ -155,7 +261,7 @@ namespace Hashbyte.Multiplayer
         private void CreateNetworkDriver(RelayServerData relayServerData)
         {
             NetworkSettings networkSettings = new NetworkSettings();
-            networkSettings.WithRelayParameters(ref relayServerData);
+            networkSettings.WithRelayParameters(ref relayServerData);            
             driver = NetworkDriver.Create(networkSettings);
         }
 
@@ -172,18 +278,18 @@ namespace Hashbyte.Multiplayer
             }
             while ((incomingConnection = driver.Accept()) != default(NetworkConnection))
             {
-                Debug.Log($"Player joined {incomingConnection}");
+                Debug.Log($"Player joined {incomingConnection.InternalId}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
                 cancellationTokenSource = new CancellationTokenSource();
                 cancellationToken = cancellationTokenSource.Token;
-                HeartbeatPlayer();
+                CheckPingHost();
             }
         }
         private int pingsMissed = -1;
         private async void HeartbeatPlayer()
         {
-            GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PLAYER_ALIVE };
+            GameEvent pingEvent = new GameEvent() { eventType = GameEventType.PING };
             int eventID = 1;
             Debug.Log($"Bakshish Heartbeat starting {eventID} -- {cancellationToken.IsCancellationRequested}");
             while (eventID < 100 && MultiplayerService.Instance.IsConnected && !cancellationToken.IsCancellationRequested)
@@ -214,10 +320,11 @@ namespace Hashbyte.Multiplayer
 
         private async void TryReconnecting()
         {
-            int waitTime = 60/*seconds*/;
+            float waitTime = 60/*seconds*/;
+            Debug.Log("Bakshish. Trying to reconnect");
             while (waitTime > 0)
             {
-                await Task.Delay(1000);
+                await Task.Delay(200);
                 if (MultiplayerService.Instance.IsConnected && !cancellationToken.IsCancellationRequested)
                 {
                     multiplayerEvents.OnReconnected();
@@ -225,13 +332,13 @@ namespace Hashbyte.Multiplayer
                     SendMove(new GameEvent() { eventType = GameEventType.PLAYER_RECONNECTED });
                     break;
                 }
-                waitTime--;
+                waitTime -= 0.2f;
             }
             if (!disconnected)
             {
                 //Resume game. Ping player for missed moves
-                Debug.Log("Bakshish. Player reconnected to server now");
-                HeartbeatPlayer();
+                Debug.Log("Bakshish. Reconnected to server. Handle Relay issue here");
+                DisconnectAndRecover();
             }
             else
             {
@@ -257,7 +364,7 @@ namespace Hashbyte.Multiplayer
                     cancellationTokenSource = new CancellationTokenSource();
                     cancellationToken = cancellationTokenSource.Token;
                     multiplayerEvents.OnPlayerConnected();
-                    HeartbeatPlayer();
+                    CheckPingClient();
                     break;
 
                 // Handle Disconnect events.
@@ -269,7 +376,26 @@ namespace Hashbyte.Multiplayer
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.Timeout:
                             //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
-                            RejoinClientAllocation();
+                            Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
+                            if (!IsHost)
+                            {
+                                //if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+                                //{
+                                //    Debug.Log($"Failed to bind");
+                                //}
+                                //else
+                                //{
+                                //    Debug.Log("Binding Done");
+                                //    if (!IsHost)
+                                //    {
+                                //        clientConnection = driver.Connect();
+                                //        Debug.Log($"Requested host for connection");
+                                //    }
+                                //}
+                                //DisconnectAndRecover();
+                            }
+                            //DisconnectAndRecover();
+                            //Restart whole process from starting
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:
                             break;
@@ -280,7 +406,7 @@ namespace Hashbyte.Multiplayer
                             break;
                         default:
                             break;
-                    }                   
+                    }
                     cancellationTokenSource?.Cancel();
                     //clientConnection = default(NetworkConnection);
                     break;
@@ -289,14 +415,21 @@ namespace Hashbyte.Multiplayer
         public void Dispose()
         {
             Debug.Log("Disposing");
-            if (serverConnections.IsCreated) serverConnections.Dispose();
-            if (driver.IsCreated) driver.Dispose();
-            incomingConnection = default(NetworkConnection);
-            clientConnection = default(NetworkConnection);
-            if (cancellationTokenSource != null)
+            try
             {
-                cancellationTokenSource.Cancel();
-                cancellationTokenSource.Dispose();
+                if (serverConnections.IsCreated) serverConnections.Dispose();
+                if (driver.IsCreated) driver.Dispose();
+                incomingConnection = default(NetworkConnection);
+                clientConnection = default(NetworkConnection);
+                if (cancellationTokenSource != null)
+                {
+                    cancellationTokenSource.Cancel();
+                    cancellationTokenSource.Dispose();
+                }
+            }
+            catch (ObjectDisposedException e)
+            {
+                Debug.Log(e.Message);
             }
         }
 
@@ -313,24 +446,36 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = eventSplit[1];
                 }
             }
-            if (gameEvent.eventType == GameEventType.PLAYER_ALIVE && MultiplayerService.Instance.IsConnected)
+            if (gameEvent.eventType == GameEventType.PING)
             {
-                gameEvent.eventType = GameEventType.PLAYER_ALIVE_RESPONSE;
-                //Debug.Log("Ping Recieved, Returning");
-                //Acknowledge other player
+                //Host sent us a ping, to confirm we are alive, send pong back
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
+                gameEvent.eventType = GameEventType.PONG;
+                pingReceived = true;
                 SendMove(gameEvent);
+                CheckPingClient();
                 return;
             }
-            else if (gameEvent.eventType == GameEventType.PLAYER_ALIVE_RESPONSE && MultiplayerService.Instance.IsConnected)
+            else if (gameEvent.eventType == GameEventType.PONG)
             {
-                pingsMissed--;
+                //Other player confirmed connected by sending pong back
+                pongReceived = true;
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
+                //Resend ping to player to keep connection alive
+                CheckPingHost();
                 return;
             }
-            else if (gameEvent.eventType == GameEventType.PLAYER_RECONNECTED && MultiplayerService.Instance.IsConnected)
+            else if (gameEvent.eventType == GameEventType.PLAYER_RECONNECTED)
             {
                 multiplayerEvents.OnOtherPlayerReconnected();
-                pingsMissed = 0;
-                HeartbeatPlayer();
+                //Other player reconnected, we establish ping again
+                if (IsHost) CheckPingHost();
+                else
+                {
+                    gameEvent.eventType = GameEventType.PONG;
+                    pingReceived = true;
+                    SendMove(gameEvent);
+                }
                 return;
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));

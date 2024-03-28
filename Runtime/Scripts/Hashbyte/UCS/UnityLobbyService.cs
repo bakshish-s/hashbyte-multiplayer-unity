@@ -15,6 +15,8 @@ namespace Hashbyte.Multiplayer
         public event LobbyPlayersLeft OnPlayersLeft;
         public delegate void LobbyDeletedDelegate();
         public event LobbyDeletedDelegate OnLobbyDeleted;
+        public delegate void LobbyDataUpdated(Dictionary<string, object> data);
+        public event LobbyDataUpdated OnDataUpdated;
 
         private string lobbyId;
         private int lobbyLifespan = 120;
@@ -22,11 +24,25 @@ namespace Hashbyte.Multiplayer
         {
             PlayerJoined += OnPlayerJoined;
             PlayerLeft += OnPlayerLeft;
+            DataChanged += UnityLobbyService_DataChanged;
             LobbyDeleted += () =>
             {
                 OnLobbyDeleted?.Invoke();
                 lobbyId = null;
             };
+        }
+
+        private void UnityLobbyService_DataChanged(Dictionary<string, ChangedOrRemovedLobbyValue<DataObject>> dataChanged)
+        {
+            if(dataChanged != null && dataChanged.Count > 0)
+            {
+                Dictionary<string, object> updatedData = new Dictionary<string, object>();
+                foreach(string key in dataChanged.Keys)
+                {
+                    updatedData.Add(key, dataChanged[key].Value.Value);
+                }
+                OnDataUpdated?.Invoke(updatedData);
+            }
         }
 
         private void OnPlayerLeft(List<int> playersLeft)
@@ -196,7 +212,7 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task UpdateLobbyData(string lobbyId, Hashtable dataToUpdate)
+        public async Task<Lobby> UpdateLobbyData(string lobbyId, Hashtable dataToUpdate)
         {
             UpdateLobbyOptions options = new UpdateLobbyOptions();
             options.Data = new Dictionary<string, DataObject>();
@@ -207,10 +223,12 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(lobbyId, options);
+                return lobby;
             }
             catch (LobbyServiceException ex)
             {
                 Debug.Log(ex.Reason.ToString());
+                return null;
             }
         }
 

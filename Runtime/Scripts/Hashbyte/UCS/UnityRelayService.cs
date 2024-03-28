@@ -5,6 +5,17 @@ namespace Hashbyte.Multiplayer
 {
     internal class UnityRelayService
     {
+        #region Singleton
+        private static UnityRelayService instance;
+        public static UnityRelayService Instance
+        {
+            get
+            {
+                if (instance == null) instance = new UnityRelayService();
+                return instance;
+            }
+        }
+        #endregion
         public async Task<IRoomResponse> CreateRelaySession(string region, UnityRoomResponse roomResponse)
         {
             try
@@ -26,15 +37,25 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> JoinRelaySession(UnityRoomResponse roomResponse)
         {
-            JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(roomResponse.Room.RoomId);
-            roomResponse.clientAllocation = allocation;
-            roomResponse.Success = true;
-            return roomResponse;
+            try
+            {
+                JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(roomResponse.Room.RoomId);
+                roomResponse.clientAllocation = allocation;
+                roomResponse.Success = true;
+                return roomResponse;
+            }catch (RelayServiceException exception)
+            {
+                Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
+                roomResponse = new UnityRoomResponse();
+                roomResponse.Success = false;
+                roomResponse.Error = new RoomError() { ErrorCode = exception.ErrorCode, Message = exception.Message, };
+                return roomResponse;
+            }
         }
 
         public void DisconnectFromRelay()
         {
-            
+
         }
     }
 }

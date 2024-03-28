@@ -17,7 +17,7 @@ namespace Hashbyte.Multiplayer
         public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> FindAvailableRooms();
         public System.Threading.Tasks.Task LeaveRoom(GameRoom room);
         public System.Threading.Tasks.Task DeleteRoom(GameRoom room);
-        public System.Threading.Tasks.Task UpdateRoomProperties(string roomID, System.Collections.Hashtable roomProperties);
+        public System.Threading.Tasks.Task<System.Collections.Hashtable> UpdateRoomProperties(string roomID, System.Collections.Hashtable roomProperties);
 
     }
 }

@@ -24,6 +24,7 @@ namespace Hashbyte.Multiplayer
                 lobbyService.OnPlayersJoined += multiplayerEvents.OnPlayerJoinedRoom;
                 lobbyService.OnPlayersLeft += multiplayerEvents.OnPlayerLeftRoom;
                 lobbyService.OnLobbyDeleted += multiplayerEvents.OnRoomDeleted;
+                lobbyService.OnDataUpdated += multiplayerEvents.OnRoomDataUpdated;
             }
         }
 
@@ -58,7 +59,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public async Task<List<string>> FindAvailableRooms()
-        {            
+        {
             QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync();
             List<string> availableRooms = new List<string>();
             List<Lobby> availableLobbies = response.Results;
@@ -89,9 +90,18 @@ namespace Hashbyte.Multiplayer
             return roomResponse;
         }
 
-        public async Task UpdateRoomProperties(string roomID, Hashtable roomProperties)
+        public async Task<Hashtable> UpdateRoomProperties(string roomID, Hashtable roomProperties)
         {
-            await lobbyService.UpdateLobbyData(roomID, roomProperties);
+            Lobby lobby = await lobbyService.UpdateLobbyData(roomID, roomProperties);
+            Hashtable updatedProperties = new Hashtable();
+            if (lobby != null)
+            {
+                foreach (string dataKey in lobby.Data.Keys)
+                {
+                    updatedProperties.Add(dataKey, lobby.Data[dataKey].Value);
+                }
+            }
+            return updatedProperties;
         }
 
         public async Task DeleteRoom(GameRoom room)
