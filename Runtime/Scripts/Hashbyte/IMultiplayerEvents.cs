@@ -11,7 +11,7 @@ namespace Hashbyte.Multiplayer
         public void OtherPlayerNotResponding();
         public void OnOtherPlayerReconnected();
         public void OnRoomDeleted();
-        public void OnRoomDataUpdated(System.Collections.Generic.Dictionary<string, object> data);  
+        public void OnRoomDataUpdated(System.Collections.Hashtable data);  
         public System.Collections.Generic.List<INetworkEvents> GetTurnEventListeners();
     }
 }

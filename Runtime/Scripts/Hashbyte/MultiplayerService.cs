@@ -344,9 +344,22 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public void OnRoomDataUpdated(Dictionary<string, object> data)
+        public void OnRoomDataUpdated(Hashtable data)
         {
-            Debug.Log($"Room data updated by host");
+            Debug.Log($"Room data updated");
+            if(data!= null)
+            {
+                foreach (INetworkEvents networkListener in networkListeners)
+                {
+                    networkListener.OnRoomPropertiesUpdated(data);
+                }
+                if (data.ContainsKey(Constants.kRoomId))
+                {
+                    Debug.Log($"Room has been updated(Can only be done by host)");
+                    if(!CurrentRoom.isHost)
+                        RejoinAllocation(data[Constants.kRoomId].ToString());  
+                }
+            }
             if (CurrentRoom.isHost) return;
             foreach(string key in data.Keys)
             {
@@ -358,7 +371,7 @@ namespace Hashbyte.Multiplayer
 
         private async void RejoinAllocation(string roomId)
         {
-            await networkService.Disconnect();
+            await networkService.Disconnect();            
             await ((UnityNetService)networkService).RejoinClientAllocation(roomId);
         }
     }

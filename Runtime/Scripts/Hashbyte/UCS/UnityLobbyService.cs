@@ -15,7 +15,7 @@ namespace Hashbyte.Multiplayer
         public event LobbyPlayersLeft OnPlayersLeft;
         public delegate void LobbyDeletedDelegate();
         public event LobbyDeletedDelegate OnLobbyDeleted;
-        public delegate void LobbyDataUpdated(Dictionary<string, object> data);
+        public delegate void LobbyDataUpdated(Hashtable data);
         public event LobbyDataUpdated OnDataUpdated;
 
         private string lobbyId;
@@ -36,7 +36,7 @@ namespace Hashbyte.Multiplayer
         {
             if(dataChanged != null && dataChanged.Count > 0)
             {
-                Dictionary<string, object> updatedData = new Dictionary<string, object>();
+                Hashtable updatedData = new Hashtable();
                 foreach(string key in dataChanged.Keys)
                 {
                     updatedData.Add(key, dataChanged[key].Value.Value);

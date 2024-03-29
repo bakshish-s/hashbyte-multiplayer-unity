@@ -6,6 +6,7 @@ namespace Hashbyte.Multiplayer
         public bool IsHost { get; }
         public bool ConnectToServer(IConnectSettings connectSettings);
         public System.Threading.Tasks.Task Disconnect();
+        public void RecoverConnection();
         public void NetworkUpdate();
         public void SendMove(GameEvent gameEvent);
         public void Dispose();
