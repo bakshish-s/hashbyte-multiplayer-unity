@@ -36,24 +36,39 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> JoinRelaySession(UnityRoomResponse roomResponse)
+        public async Task<bool> JoinRelaySession(string joinCode)
         {
             try
             {
-                JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(roomResponse.Room.RoomId);
-                roomResponse.clientAllocation = allocation;
-                roomResponse.Success = true;
-                return roomResponse;
-            }
-            catch (RelayServiceException exception)
+                JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+                JoinCode = joinCode;
+                ClientAllocation = allocation;
+                return true;
+            }catch (RelayServiceException exception)
             {
-                Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
-                roomResponse = new UnityRoomResponse();
-                roomResponse.Success = false;
-                roomResponse.Error = new RoomError() { ErrorCode = exception.ErrorCode, Message = exception.Message, };
-                return roomResponse;
+                Debug.Log($"Relay Exception while joining {exception.ErrorCode}, {exception.Message}");
+                return false;
             }
         }
+
+        //public async Task<IRoomResponse> JoinRelaySession(UnityRoomResponse roomResponse)
+        //{
+        //    try
+        //    {
+        //        JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(roomResponse.Room.RoomId);
+        //        roomResponse.clientAllocation = allocation;
+        //        roomResponse.Success = true;
+        //        return roomResponse;
+        //    }
+        //    catch (RelayServiceException exception)
+        //    {
+        //        Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
+        //        roomResponse = new UnityRoomResponse();
+        //        roomResponse.Success = false;
+        //        roomResponse.Error = new RoomError() { ErrorCode = exception.ErrorCode, Message = exception.Message, };
+        //        return roomResponse;
+        //    }
+        //}
 
         public void DisconnectFromRelay()
         {

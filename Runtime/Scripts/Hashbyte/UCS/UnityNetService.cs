@@ -21,42 +21,49 @@ namespace Hashbyte.Multiplayer
         private bool disconnected;
         private CancellationTokenSource cancellationTokenSource;
         private CancellationToken cancellationToken;
-        private string roomId;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents) { multiplayerEvents = _multiplayerEvents; }
         public bool ConnectToServer(IConnectSettings connectSettings)
         {
-            bool connectionStatus;
-            if (!(connectSettings is UnityConnectSettings)) return false;
-            UnityConnectSettings unityConnect = (UnityConnectSettings)connectSettings;
-            IsHost = unityConnect.RoomResponse.Room.isHost;
-            roomId = unityConnect.RoomResponse.Room.RoomId;
-            RelayServerData relayServerData;
-            if (IsHost)
-                relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).hostAllocation, connectSettings.ConnectionType);
-            else
-                relayServerData = new RelayServerData(((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation, connectSettings.ConnectionType);
-            //Dispose();
+            IsHost = connectSettings.RoomResponse.Room.isHost;
+            disconnected = false;
+            return IsHost ? ConnectAsHost() : ConnectAsClient();
+        }
+
+        private bool ConnectAsHost()
+        {
+            RelayServerData relayServerData = new RelayServerData(UnityRelayService.Instance.HostAllocation, Constants.kConnectionType);
             CreateNetworkDriver(relayServerData);
             if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
-                //Failed to bind
-                connectionStatus = false;
+                Debug.Log("Failed to Bind to allocation");
             }
-            else connectionStatus = (!(IsHost && driver.Listen() != 0));
-            if (connectionStatus)
+            else if (driver.Listen() != 0)
             {
-                if (IsHost) serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
-                //else clientConnection = driver.Connect();
+                Debug.Log("Failed to listen to server");
             }
-            if (!IsHost)
+            else
             {
-                Debug.Log($"Asking Host to accept my connection {((UnityRoomResponse)unityConnect.RoomResponse).clientAllocation}");
+                serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
+                return true;
+            }
+            return false;
+        }
+
+        private bool ConnectAsClient()
+        {
+            RelayServerData relayServerData = new RelayServerData(UnityRelayService.Instance.ClientAllocation, Constants.kConnectionType);
+            CreateNetworkDriver(relayServerData);
+            if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+            {
+                Debug.Log("Failed to Bind to allocation");
+            }
+            else
+            {
+                Debug.Log($"Asking Host to accept my connection");
                 clientConnection = driver.Connect();
+                return true;
             }
-            Debug.Log($"Ready to start game ");
-            IsConnected = connectionStatus;
-            disconnected = false;
-            return connectionStatus;
+            return false;
         }
 
         public async Task RejoinClientAllocation(string allocationId)
@@ -178,46 +185,22 @@ namespace Hashbyte.Multiplayer
             if (IsHost)
             {
                 Debug.Log("Creating new allocation now");
-                Unity.Services.Relay.Models.Allocation allocation = await Unity.Services.Relay.RelayService.Instance.CreateAllocationAsync(Constants.kMaxPlayers, Constants.kRegionForServer);
-                Debug.Log($"Allocation created {allocation.AllocationId}");
-                string roomId = await Unity.Services.Relay.RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-                Debug.Log($"New Room ID generated {roomId}");
-                //Should create new network driver here as well
-                RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
-                CreateNetworkDriver(relayServerData);
-                if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+                if(await UnityRelayService.Instance.CreateRelaySession())
                 {
-                    Debug.Log($"Binding failed");
+                    Debug.Log($"Allocation created");
+                    ConnectAsHost();
+                    MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, UnityRelayService.Instance.JoinCode } });
                 }
-                else
-                {
-                    if(driver.Listen() != 0)
-                    {
-                        Debug.Log("Listening failed");
-                    }
-                    else
-                    {
-                        serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
-                    }
-                }
-                MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, roomId } });
+                
             }
             else
             {
                 Debug.Log("Joining allocation again");
-                Unity.Services.Relay.Models.JoinAllocation allocation = await Unity.Services.Relay.RelayService.Instance.JoinAllocationAsync(roomId);
-                Debug.Log("Allocation joined");
-                RelayServerData relayServerData = new RelayServerData(allocation, Constants.kConnectionType);
-                CreateNetworkDriver(relayServerData);
-                if(driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+                if (await UnityRelayService.Instance.JoinRelaySession(UnityRelayService.Instance.JoinCode))
                 {
-                    Debug.Log($"Binding failed");
-                }
-                else
-                {
-                    Debug.Log("Binding succesfull, asking host to accept connection");
-                    clientConnection = driver.Connect();
-                }
+                    Debug.Log("Allocation joined");
+                    ConnectAsClient();
+                }                
             }
         }
 
@@ -261,7 +244,7 @@ namespace Hashbyte.Multiplayer
         private void CreateNetworkDriver(RelayServerData relayServerData)
         {
             NetworkSettings networkSettings = new NetworkSettings();
-            networkSettings.WithRelayParameters(ref relayServerData);            
+            networkSettings.WithRelayParameters(ref relayServerData);
             driver = NetworkDriver.Create(networkSettings);
         }
 

@@ -14,7 +14,7 @@ namespace Hashbyte.Multiplayer
         private UnityLobbyService lobbyService;
 
         public UnityGameRoomService(IMultiplayerEvents multiplayerEvents)
-        {            
+        {
             lobbyService = new UnityLobbyService();
             if (multiplayerEvents != null)
             {
@@ -31,7 +31,10 @@ namespace Hashbyte.Multiplayer
             roomResponse = await lobbyService.QuickJoinLobby(roomProperties);
             if (roomResponse.Success)
             {
-                roomResponse = await UnityRelayService.Instance.JoinRelaySession((UnityRoomResponse)roomResponse);
+                if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
+                    ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
+                else
+                    roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
                 multiplayerEventListener?.JoinRoomResponse(roomResponse);
             }
             else
@@ -53,8 +56,8 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };                
-            }            
+                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
+            }
             roomResponse = await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
             multiplayerEventListener?.JoinRoomResponse(roomResponse);
             return roomResponse;
@@ -86,14 +89,20 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> JoinRoom(string roomId, Hashtable options)
         {
             roomResponse = await lobbyService.JoinLobbyById(roomId, options);
-            roomResponse = await UnityRelayService.Instance.JoinRelaySession((UnityRoomResponse)roomResponse);
+            if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
+                ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
+            else
+                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
             multiplayerEventListener?.JoinRoomResponse(roomResponse);
             return roomResponse;
         }
         public async Task<IRoomResponse> JoinRoomByCode(string roomCode, Hashtable options)
         {
             roomResponse = await lobbyService.JoinLobbyByCode(roomCode, options);
-            roomResponse = await UnityRelayService.Instance.JoinRelaySession((UnityRoomResponse)roomResponse);
+            if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
+                ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
+            else
+                roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
             multiplayerEventListener?.JoinRoomResponse(roomResponse);
             return roomResponse;
         }
