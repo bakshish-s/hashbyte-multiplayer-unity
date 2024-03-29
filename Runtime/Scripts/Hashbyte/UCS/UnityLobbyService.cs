@@ -146,6 +146,7 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync(joinOptions);
+                Debug.Log($"Found Lobby {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 return GetSuccessRoomResponse(lobby, false);
             }
@@ -171,6 +172,7 @@ namespace Hashbyte.Multiplayer
             gameRoom.isPrivateRoom = lobby.IsPrivate;
             foreach (string key in lobby.Data.Keys)
             {
+                Debug.Log($"Lobby has data {key} {lobby.Data[key].Value}");
                 gameRoom.RoomOptions.Add(key, lobby.Data[key].Value);
             }
             for (int i = 0; i < lobby.Players.Count; i++)
@@ -218,7 +220,7 @@ namespace Hashbyte.Multiplayer
             options.Data = new Dictionary<string, DataObject>();
             foreach (var dataObj in dataToUpdate.Keys)
             {
-                options.Data.Add(dataObj.ToString(), new DataObject(visibility: DataObject.VisibilityOptions.Public, value: dataToUpdate[dataObj].ToString()));
+                options.Data.Add(dataObj.ToString(), new DataObject(visibility: DataObject.VisibilityOptions.Member, value: dataToUpdate[dataObj].ToString()));
             }
             try
             {

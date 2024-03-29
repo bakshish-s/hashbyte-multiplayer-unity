@@ -40,7 +40,7 @@ namespace Hashbyte.Multiplayer
             {
                 await CheckPing(token);
                 await Task.Delay(3000);
-                Debug.Log($"After checking ping {IsConnected}");
+                //Debug.Log($"After checking ping {IsConnected}");
             }
             if (IsConnected)
             {
@@ -65,6 +65,7 @@ namespace Hashbyte.Multiplayer
             else
             {
                 Debug.Log($"Failed to reconnect in 30 seconds");
+                //TODO Bakshish:Should do something here if not connected back in 30 seconds
             }
         }
         public void Dispose()
@@ -85,7 +86,7 @@ namespace Hashbyte.Multiplayer
                 timeout = 2;
                 if (ping.isDone && ping.time != -1)
                 {
-                    Debug.Log($"Ping success {IsConnected}");
+                    //Debug.Log($"Ping success {IsConnected}");
                     if (!IsConnected)
                     {
                         IsConnected = true;

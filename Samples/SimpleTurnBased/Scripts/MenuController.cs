@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
@@ -12,6 +13,7 @@ namespace Hashbyte.Multiplayer.Demo
         public TMPro.TextMeshProUGUI pingMessage;
         public UnityEngine.UI.Image networkIndicator;
         public bool isConnected;
+        public TextMeshProUGUI messageQueue;
         private Hashtable seedOption;
 
         async void Start()
@@ -79,6 +81,7 @@ namespace Hashbyte.Multiplayer.Demo
                 case GameEventType.GAME_ENDED:
                     break;
                 case GameEventType.GAME_MOVE:
+                    UpdateMessageQueue(gameEvent.data);
                     break;
                 case GameEventType.END_TURN:
                     break;
@@ -98,6 +101,18 @@ namespace Hashbyte.Multiplayer.Demo
                     break;
             }
                     pingMessage.text = $"Ping/Pong {ping}/{pong}";
+        }
+
+        public void GUI_SendMessage(TMP_InputField messageField)
+        {
+            string message = messageField.text;
+            if (string.IsNullOrEmpty(message)) message = "Ping";
+            MultiplayerService.Instance.SendMove(new GameEvent() { eventType = GameEventType.GAME_MOVE, data = message });
+        }
+
+        private void UpdateMessageQueue(string message)
+        {
+            messageQueue.text += $"\n{message}";
         }
 
         private void Update()

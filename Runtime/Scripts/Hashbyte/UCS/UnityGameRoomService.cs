@@ -51,8 +51,7 @@ namespace Hashbyte.Multiplayer
             if (success)
             {
                 ((UnityRoomResponse)roomResponse).hostAllocation = UnityRelayService.Instance.HostAllocation;
-                roomResponse.Room.RoomId = UnityRelayService.Instance.JoinCode;
-                return roomResponse;
+                ((UnityRoomResponse)roomResponse).Room = new GameRoom() { RoomId = UnityRelayService.Instance.JoinCode };                
             }
             else
             {

@@ -21,7 +21,8 @@ namespace Hashbyte.Multiplayer
         public System.Collections.Generic.Dictionary<int, INetworkPlayer> players;        
         public System.Collections.Hashtable RoomOptions { get; internal set; }
         public string LobbyCode { get; internal set; }
-        public string RoomCode => LobbyCode;        
+        public string RoomCode => LobbyCode;
+        public bool otherPlayerConnected;
 
         public GameRoom()
         {

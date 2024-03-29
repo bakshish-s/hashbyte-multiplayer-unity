@@ -26,7 +26,7 @@ namespace Hashbyte.Multiplayer
             try
             {
                 HostAllocation = await RelayService.Instance.CreateAllocationAsync(Constants.kMaxPlayers, Constants.kRegionForServer);
-                string joinCode = await RelayService.Instance.GetJoinCodeAsync(HostAllocation.AllocationId);
+                JoinCode = await RelayService.Instance.GetJoinCodeAsync(HostAllocation.AllocationId);
                 return true;
             }
             catch (RelayServiceException exception)

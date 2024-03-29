@@ -41,7 +41,7 @@ namespace Hashbyte.Multiplayer
                     TryReconnecting();
                     break;
                 }
-                timeForNextPing = (float)(20 - (DateTime.Now - startTime).TotalSeconds);
+                timeForNextPing = (float)(eventTime - (DateTime.Now - startTime).TotalSeconds);
             }
             if (!pongReceived && MultiplayerService.Instance.IsConnected)
             {

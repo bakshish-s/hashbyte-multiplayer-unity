@@ -157,7 +157,7 @@ namespace Hashbyte.Multiplayer
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnRoomPropertiesUpdated(roomData);
-            }            
+            }
         }
 
         public async void LeaveRoom()
@@ -240,13 +240,27 @@ namespace Hashbyte.Multiplayer
 
         public void OnPlayerConnected()
         {
-            Debug.Log("Player Connected");
-            isGameJoined = true;
-            //Ready to start the game
-            foreach (INetworkEvents networkListener in networkListeners)
+            //Check if this is a reconnection
+            if (CurrentRoom.otherPlayerConnected)
             {
-                networkListener.OnPlayerConnected();
+                Debug.Log("Player Re-Connected");
+                foreach (INetworkEvents networkListener in networkListeners)
+                {
+                    networkListener.OnPlayerReconnected();
+                }
             }
+            else
+            {
+                CurrentRoom.otherPlayerConnected = true;
+                Debug.Log("Player Connected");
+                isGameJoined = true;
+                //Ready to start the game
+                foreach (INetworkEvents networkListener in networkListeners)
+                {
+                    networkListener.OnPlayerConnected();
+                }
+            }
+
         }
 
         public void JoinRoomResponse(IRoomResponse roomResponse)
@@ -347,7 +361,7 @@ namespace Hashbyte.Multiplayer
         public void OnRoomDataUpdated(Hashtable data)
         {
             Debug.Log($"Room data updated");
-            if(data!= null)
+            if (data != null)
             {
                 foreach (INetworkEvents networkListener in networkListeners)
                 {
@@ -355,23 +369,22 @@ namespace Hashbyte.Multiplayer
                 }
                 if (data.ContainsKey(Constants.kRoomId))
                 {
-                    Debug.Log($"Room has been updated(Can only be done by host)");
-                    if(!CurrentRoom.isHost)
-                        RejoinAllocation(data[Constants.kRoomId].ToString());  
+                    Debug.Log($"Room has been updated(Can only be done by host), Host has reconnected");
+                    if (!CurrentRoom.isHost)
+                    {
+                        RejoinAllocation(data[Constants.kRoomId].ToString());
+                        foreach (INetworkEvents networkListener in networkListeners)
+                        {
+                            networkListener.OnPlayerReconnected();
+                        }
+                    }
                 }
             }
-            if (CurrentRoom.isHost) return;
-            foreach(string key in data.Keys)
-            {
-                Debug.Log($"{key}: {data[key]}");
-            }
-            if (data == null || !data.ContainsKey(Constants.kRoomId)) return;
-            RejoinAllocation(data[Constants.kRoomId].ToString());
         }
 
         private async void RejoinAllocation(string roomId)
         {
-            await networkService.Disconnect();            
+            await networkService.Disconnect();
             await ((UnityNetService)networkService).RejoinClientAllocation(roomId);
         }
     }
