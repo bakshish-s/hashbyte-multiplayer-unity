@@ -85,8 +85,8 @@ namespace Hashbyte.Multiplayer
                     await Task.Yield();
                     timeout -= Time.deltaTime;
                 }
-                //Debug.Log($"PING: END {timeout}");
-                timeout = 2;
+                //Debug.Log($"PING: END {timeout} -- {ping.time}");
+                timeout = 3;
                 if (ping.isDone && ping.time != -1)
                 {
                     //Debug.Log($"Ping success {IsConnected}");
