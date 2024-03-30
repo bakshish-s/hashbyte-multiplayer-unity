@@ -79,13 +79,13 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Ping ping = new Ping("8.8.8.8");
-                //Debug.Log($"PING: START {timeout}");
+                Debug.Log($"PING: START {timeout}");
                 while (!token.IsCancellationRequested && !ping.isDone && timeout > 0)
                 {
                     await Task.Yield();
                     timeout -= Time.deltaTime;
                 }
-                //Debug.Log($"PING: END {timeout} -- {ping.time}");
+                Debug.Log($"PING: END {timeout} -- {ping.time}");
                 timeout = 3;
                 if (ping.isDone && ping.time != -1)
                 {
