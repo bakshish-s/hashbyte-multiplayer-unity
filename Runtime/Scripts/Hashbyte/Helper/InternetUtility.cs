@@ -105,6 +105,7 @@ namespace Hashbyte.Multiplayer
                         OnConnectionStatusChange?.Invoke(false);
                     }
                 }
+                ping.DestroyPing();
             }
             catch (System.Exception e)
             {
