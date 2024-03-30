@@ -208,7 +208,6 @@ namespace Hashbyte.Multiplayer
                 multiplayerEvents.OnPlayerConnected();
                 cancellationTokenSource = new CancellationTokenSource();
                 disconnectionHandler.SetCancellationToken(cancellationTokenSource.Token);
-                disconnectionHandler.SendPing();
             }
         }
 
@@ -229,7 +228,6 @@ namespace Hashbyte.Multiplayer
                     cancellationTokenSource = new CancellationTokenSource();
                     disconnectionHandler.SetCancellationToken(cancellationTokenSource.Token);
                     multiplayerEvents.OnPlayerConnected();
-                    disconnectionHandler.CheckPing();
                     break;
 
                 // Handle Disconnect events.
@@ -294,11 +292,17 @@ namespace Hashbyte.Multiplayer
             }
             if (gameEvent.eventType == GameEventType.PING)
             {
+                //Reset gamestartcount so we do not send duplicate pong
+                gameStartAckCount = 0;
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 disconnectionHandler.OnPing();
                 return;
             }
             else if (gameEvent.eventType == GameEventType.PONG)
             {
+                //Reset gamestartcount so we do not send duplicate ping
+                gameStartAckCount = 0;
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 disconnectionHandler.OnPong();
                 return;
             }
@@ -307,13 +311,36 @@ namespace Hashbyte.Multiplayer
                 disconnectionHandler.OnReconnected(IsHost);
                 return;
             }
+            else if (gameEvent.eventType == GameEventType.GAME_STARTED)
+            {                
+                gameStartAckCount++;
+                SendMove(new GameEvent() { eventType = GameEventType.GAME_ALIVE, data = (gameStartAckCount).ToString() });                
+                return;
+            }else if(gameEvent.eventType == GameEventType.GAME_ALIVE)
+            {
+                int gameAlive = int.Parse(gameEvent.data);
+                //gameAlive = 2, ack = 1 (I started late, let's start ping or pong
+                //gameAlive = 2, ack = 2 (Both started at same time, host starts the game)
+                if(gameAlive == 2 && gameStartAckCount == 2)
+                {
+                    Debug.Log($"Both started at same time");
+                    if (IsHost) disconnectionHandler.SendPing();
+                }else if(gameAlive == 2 && gameStartAckCount == 1)
+                {
+                    Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
+                    //I started late
+                    SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG });
+                }
+                return;
+            }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
-
+        private int gameStartAckCount = 0;
         public void SendMove(GameEvent gameEvent)
         {
             if (IsHost)
             {
+                if (!serverConnections.IsCreated) return;
                 foreach (NetworkConnection connection in serverConnections)
                 {
                     SendMoveToConnection(gameEvent, connection);
@@ -327,6 +354,10 @@ namespace Hashbyte.Multiplayer
 
         private void SendMoveToConnection(GameEvent gameEvent, NetworkConnection connection)
         {
+            if (gameEvent.eventType == GameEventType.GAME_STARTED)
+            {                
+                gameStartAckCount++;
+            }
             int statusOfSend = driver.BeginSend(connection, out var writer);
             if (statusOfSend == 0)
             {

@@ -70,6 +70,7 @@ namespace Hashbyte.Multiplayer.Demo
         void INetworkEvents.OnPlayerConnected()
         {
             playButton.interactable = true;
+            MultiplayerService.Instance.SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
         }
         int ping = 0; int pong = 0; int timeer = 0;
         public void OnNetworkMessage(GameEvent gameEvent)

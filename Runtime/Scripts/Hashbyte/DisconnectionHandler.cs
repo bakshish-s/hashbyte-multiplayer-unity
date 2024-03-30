@@ -12,7 +12,7 @@ namespace Hashbyte.Multiplayer
         private GameEvent pong = new GameEvent() { eventType = GameEventType.PONG };
         private INetworkService network;
         private CancellationToken cancellationToken;
-        private const float eventTime = 5;
+        private const float eventTime = 5;        
 
         public delegate void DisconnectionEvents();
         public event DisconnectionEvents OnDisconnectedFromInternet, NoResponseFromOpponent, OpponentReconnected, OnReconnectedToInternet;        
@@ -29,7 +29,7 @@ namespace Hashbyte.Multiplayer
             pongReceived = false;
             timeForNextPing = eventTime;
             DateTime startTime = DateTime.Now;
-            network.SendMove(ping);
+            network.SendMove(ping);            
             GameEvent gameEvent = new GameEvent() { eventType = GameEventType.GAME_ALIVE };
             while (!pongReceived && timeForNextPing > 0)
             {
@@ -77,14 +77,14 @@ namespace Hashbyte.Multiplayer
         public void OnPing()
         {
             //Host sent us a ping, to confirm we are alive, send pong back                        
-            pingReceived = true;
+            pingReceived = true;            
             network.SendMove(pong);
             CheckPing();
         }
         public void OnPong()
         {
             //Other player confirmed connected by sending pong back
-            pongReceived = true;            
+            pongReceived = true;                     
             //Resend ping to player to keep connection alive
             SendPing();
         }
