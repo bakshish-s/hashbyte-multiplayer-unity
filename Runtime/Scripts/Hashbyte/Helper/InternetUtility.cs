@@ -70,19 +70,22 @@ namespace Hashbyte.Multiplayer
         }
         public void Dispose()
         {
+            Debug.Log("****************************** PING: CANCEL *********************************");
             source.Cancel();
         }
-        float timeout = 2;
+        float timeout = 3;
         public async Task CheckPing(CancellationToken token)
         {
             try
             {
-                Ping ping = new Ping("8.8.8.8");                
+                Ping ping = new Ping("8.8.8.8");
+                Debug.Log($"PING: START {timeout}");
                 while (!token.IsCancellationRequested && !ping.isDone && timeout > 0)
                 {
                     await Task.Yield();
                     timeout -= Time.deltaTime;
                 }
+                Debug.Log($"PING: END {timeout}");
                 timeout = 2;
                 if (ping.isDone && ping.time != -1)
                 {
