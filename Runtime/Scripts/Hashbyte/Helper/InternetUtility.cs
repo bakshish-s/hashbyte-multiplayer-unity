@@ -9,7 +9,7 @@ namespace Hashbyte.Multiplayer
         public bool IsConnected { get; private set; }
         private CancellationTokenSource source;
         public delegate void ConnectionStatusChange(bool connected);
-        public event ConnectionStatusChange OnConnectionStatusChange;        
+        public event ConnectionStatusChange OnConnectionStatusChange;
 #if UNITY_EDITOR
         private bool IsInternallyConnected => true;
 # elif UNITY_ANDROID
@@ -22,6 +22,7 @@ namespace Hashbyte.Multiplayer
         }
         private AndroidJavaObject checkNetwork;
 #endif
+        private int disconnectCount = 0;
         public InternetUtility()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -73,20 +74,20 @@ namespace Hashbyte.Multiplayer
             Debug.Log("****************************** PING: CANCEL *********************************");
             source.Cancel();
         }
-        float timeout = 3;
+        float timeout = 2;
         public async Task CheckPing(CancellationToken token)
         {
             try
             {
                 Ping ping = new Ping("8.8.8.8");
-                Debug.Log($"PING: START {timeout}");
+                //Debug.Log($"PING: START {timeout}");
                 while (!token.IsCancellationRequested && !ping.isDone && timeout > 0)
                 {
                     await Task.Yield();
                     timeout -= Time.deltaTime;
                 }
-                Debug.Log($"PING: END {timeout} -- {ping.time}");
-                timeout = 3;
+                //Debug.Log($"PING: END {timeout} -- {ping.time}");
+                timeout = 2;
                 if (ping.isDone && ping.time != -1)
                 {
                     //Debug.Log($"Ping success {IsConnected}");
@@ -101,8 +102,13 @@ namespace Hashbyte.Multiplayer
                     //Debug.Log($"Ping failed {IsConnected}");
                     if (IsConnected)
                     {
-                        IsConnected = false;
-                        OnConnectionStatusChange?.Invoke(false);
+                        disconnectCount++;
+                        if (disconnectCount > 1)
+                        {
+                            IsConnected = false;
+                            OnConnectionStatusChange?.Invoke(false);
+                            disconnectCount = 0;
+                        }
                     }
                 }
                 ping.DestroyPing();
