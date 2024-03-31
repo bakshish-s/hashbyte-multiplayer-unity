@@ -33,7 +33,7 @@ namespace Hashbyte.Multiplayer
             IsConnected = IsInternallyConnected;
             OnConnectionStatusChange?.Invoke(IsConnected);
             source = new CancellationTokenSource();
-            StartNetworkCheck(source.Token);
+            //StartNetworkCheck(source.Token);
         }
         public async void StartNetworkCheck(CancellationToken token)
         {
@@ -75,11 +75,11 @@ namespace Hashbyte.Multiplayer
             source.Cancel();
         }
         float timeout = 2;
-        public async Task CheckPing(CancellationToken token)
+        public async Task<bool> CheckPing(CancellationToken token, string ip = "8.8.8.8")
         {
             try
             {
-                Ping ping = new Ping("8.8.8.8");
+                Ping ping = new Ping(ip);
                 Debug.Log($"PING: START {timeout}");
                 while (!token.IsCancellationRequested && !ping.isDone && timeout > 0)
                 {
@@ -97,6 +97,7 @@ namespace Hashbyte.Multiplayer
                         IsConnected = true;
                         //OnConnectionStatusChange?.Invoke(true);
                     }
+                    return true;
                 }
                 else
                 {
@@ -111,12 +112,13 @@ namespace Hashbyte.Multiplayer
                             disconnectCount = 0;
                         }
                     }
-                }
-                ping.DestroyPing();
+                    return false;
+                }                
             }
             catch (System.Exception e)
             {
                 Debug.Log("Error while pingin " + e.Message);
+                return false;
             }
         }
     }
