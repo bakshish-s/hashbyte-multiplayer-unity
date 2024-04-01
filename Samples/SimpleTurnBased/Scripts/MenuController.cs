@@ -116,20 +116,6 @@ namespace Hashbyte.Multiplayer.Demo
             messageQueue.text += $"\n{message}";
         }
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                Hashtable roomProperties = new Hashtable
-                {
-                    { "seed", 1234 }
-                };
-                MultiplayerService.Instance.UpdateRoomProperties(roomProperties);
-            }
-            MultiplayerService.Instance.SetConnection(isConnected);
-            networkIndicator.color = MultiplayerService.Instance.IsConnected ? Color.green : Color.red;
-        }
-
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
             Debug.Log("Room properties updated");

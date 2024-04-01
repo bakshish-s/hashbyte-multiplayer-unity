@@ -14,8 +14,7 @@ namespace Hashbyte.Multiplayer
         #endregion
         public GameRoom CurrentRoom { get; private set; }
         public string PlayerId => authService.PlayerId;
-        public bool IsHost => CurrentRoom.isHost;
-        public bool IsConnected => internetUtility.IsConnected;
+        public bool IsHost => CurrentRoom.isHost;        
         protected bool isInitialized => authService.IsInitialized;
         private IAuthService authService { get; set; }
         private IGameRoomService roomService { get; set; }
@@ -23,15 +22,10 @@ namespace Hashbyte.Multiplayer
         private IConnectSettings connectionSettings { get; set; }
         private INetworkPlayer networkPlayer { get; set; }
         private List<INetworkEvents> networkListeners;
-        private InternetUtility internetUtility;
-        public void SetConnection(bool connection)
-        {
-            //internetUtility.IsConnected = connection;
-        }
+        public readonly InternetUtility internetUtility;
         public MultiplayerService(ServiceType serviceType)
         {
-            internetUtility = new InternetUtility();
-            internetUtility.OnConnectionStatusChange += OnConnected;
+            internetUtility = new InternetUtility();            
             switch (serviceType)
             {
                 case ServiceType.UNITY:
@@ -176,9 +170,8 @@ namespace Hashbyte.Multiplayer
         }
 
         public void Update()
-        {
-            if (IsConnected)
-                networkService?.NetworkUpdate();
+        {            
+            networkService?.NetworkUpdate();
         }
 
         public async void CreatePrivateGame(Hashtable gameOptions)

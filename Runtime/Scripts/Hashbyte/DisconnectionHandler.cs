@@ -12,7 +12,7 @@ namespace Hashbyte.Multiplayer
         private GameEvent pong = new GameEvent() { eventType = GameEventType.PONG };
         private INetworkService network;
         private CancellationToken cancellationToken;
-        private const float eventTime = 5;        
+        private const float eventTime = 2;        
 
         public delegate void DisconnectionEvents();
         public event DisconnectionEvents OnDisconnectedFromInternet, NoResponseFromOpponent, OpponentReconnected, OnReconnectedToInternet;        
@@ -33,44 +33,53 @@ namespace Hashbyte.Multiplayer
             GameEvent gameEvent = new GameEvent() { eventType = GameEventType.GAME_ALIVE };
             while (!pongReceived && timeForNextPing > 0)
             {
-                await Task.Yield();                
-                if (!MultiplayerService.Instance.IsConnected)
-                {
-                    //I lost connection to internet. Immediately tell user
-                    OnDisconnectedFromInternet?.Invoke();
-                    TryReconnecting();
-                    break;
-                }
+                await Task.Yield();                                
                 timeForNextPing = (float)(eventTime - (DateTime.Now - startTime).TotalSeconds);
             }
-            if (!pongReceived && MultiplayerService.Instance.IsConnected)
+            //Either we are not connected or other player not connected to internet
+            if (!pongReceived)
             {
-                NoResponseFromOpponent?.Invoke();
+                Debug.Log($"Client not responded in 2 seconds, Checking my internet connection");
+                if(!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
+                {
+                    Debug.Log($"I am not connected to internet");
+                    OnDisconnectedFromInternet?.Invoke();
+                    TryReconnecting();
+                }
+                else
+                {
+                    Debug.Log($"I am connected to internet, other player not connected");
+                    NoResponseFromOpponent?.Invoke();
+                }
             }
+                        
         }
 
         public async void CheckPing()
         {
             await Task.Delay(900);
             pingReceived = false;
-            timeForNextPing = 5;
+            timeForNextPing = eventTime;
             DateTime startTime = DateTime.Now;
             while (!pingReceived && timeForNextPing > 0)
             {
-                await Task.Yield();
-                if (!MultiplayerService.Instance.IsConnected)
+                await Task.Yield();                
+                timeForNextPing = (float)(eventTime - (DateTime.Now - startTime).TotalSeconds);
+            }
+            if (!pingReceived)
+            {
+                Debug.Log($"Host not responded in 2 seconds, Checking my internet connection");
+                if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
                 {
-                    //I lost connection to internet. Immediately tell user
-                    Debug.Log("Bakshish. Lost Connection --- ");
+                    Debug.Log($"I am not connected to internet");
                     OnDisconnectedFromInternet?.Invoke();
                     TryReconnecting();
-                    break;
                 }
-                timeForNextPing = (float)(5 - (DateTime.Now - startTime).TotalSeconds);
-            }
-            if (!pingReceived && MultiplayerService.Instance.IsConnected)
-            {
-                NoResponseFromOpponent?.Invoke();
+                else
+                {
+                    Debug.Log($"I am connected to internet, other player not connected");
+                    NoResponseFromOpponent?.Invoke();
+                }
             }
         }
 
@@ -105,11 +114,12 @@ namespace Hashbyte.Multiplayer
         {
             float waitTime = 60/*seconds*/;
             Debug.Log("Bakshish. Trying to reconnect");
+            ((UnityNetService)network).ReceiveEvent("3:Trying To Reconnect");
             bool disconnected = true;
             while (waitTime > 0)
             {
                 await Task.Delay(200);
-                if (MultiplayerService.Instance.IsConnected && !cancellationToken.IsCancellationRequested && waitTime > 0)
+                if (await MultiplayerService.Instance.internetUtility.IsConnectedToInternet() && !cancellationToken.IsCancellationRequested && waitTime > 0)
                 {
                     OnReconnectedToInternet?.Invoke();
                     disconnected = false;
