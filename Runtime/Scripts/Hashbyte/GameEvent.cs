@@ -31,6 +31,7 @@ namespace Hashbyte.Multiplayer
         GAME_ALIVE,
         PING,
         PONG,
-        PLAYER_RECONNECTED
+        PLAYER_RECONNECTED,
+        RECONNECTION_ACKNOWLEDGE,
     }
 }

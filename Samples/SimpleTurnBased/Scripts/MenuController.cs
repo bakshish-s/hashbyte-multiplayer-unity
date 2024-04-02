@@ -21,10 +21,11 @@ namespace Hashbyte.Multiplayer.Demo
             DeactivateAllPanels(null);
             seedOption = new Hashtable { { "seed", System.Guid.NewGuid() } };
             MultiplayerService.Instance.RegisterCallbacks(this);
+            MultiplayerService.Instance.internetUtility.OnStatus += UpdateMessageQueue;
             await MultiplayerService.Instance.Initialize(playerId);
             menuPanel.SetActive(true);
         }
-
+        
         public void GUI_StartGame()
         {
             DeactivateAllPanels(lobbyPanel);

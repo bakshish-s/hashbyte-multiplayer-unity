@@ -48,6 +48,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
+                Debug.Log("Listening to server");
                 serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
                 return true;
             }
@@ -122,17 +123,20 @@ namespace Hashbyte.Multiplayer
                 }
             }
         }
-        public async void RecoverConnection()
+        public async Task RecoverConnection()
         {
             Debug.Log("Disconnecting");
+            ReceiveEvent("3:Disconnecting");
             await Disconnect();
             //We might still be in lobby, if we were host let's try to create new relay allocation and give it to other player using roomperoperties
             if (IsHost)
             {
                 Debug.Log("Creating new allocation now");
+                ReceiveEvent("3:Creating new allocation");
                 if (await UnityRelayService.Instance.CreateRelaySession())
                 {
                     Debug.Log($"Allocation created");
+                    ReceiveEvent("3:Allocation created");
                     ConnectAsHost();
                     MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, UnityRelayService.Instance.JoinCode } });
                 }
@@ -141,9 +145,11 @@ namespace Hashbyte.Multiplayer
             else
             {
                 Debug.Log("Joining allocation again");
+                ReceiveEvent("3:Join Allocation");
                 if (await UnityRelayService.Instance.JoinRelaySession(UnityRelayService.Instance.JoinCode))
                 {
                     Debug.Log("Allocation joined");
+                    ReceiveEvent("3:Allocation Joined");
                     ConnectAsClient();
                 }
             }
@@ -237,12 +243,13 @@ namespace Hashbyte.Multiplayer
                     {
                         case Unity.Networking.Transport.Error.DisconnectReason.Default:
                             break;
-                        case Unity.Networking.Transport.Error.DisconnectReason.Timeout:
+                        case Unity.Networking.Transport.Error.DisconnectReason.Timeout:                           
                             //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
                             Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:
-                            Debug.Log($"Disconnection received. Max Attempts Received");
+                            Debug.Log($"Disconnection received. Max Attempts Received, Abandon game");
+                            //Abandon game ??
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote:
                             Debug.Log($"Disconnection received. Player left intentionally");
@@ -309,11 +316,23 @@ namespace Hashbyte.Multiplayer
             else if (gameEvent.eventType == GameEventType.PLAYER_RECONNECTED)
             {
                 disconnectionHandler.OnReconnected(IsHost);
+                SendMove(new GameEvent() { eventType = GameEventType.RECONNECTION_ACKNOWLEDGE });
+                return;
+            }
+            else if (gameEvent.eventType == GameEventType.RECONNECTION_ACKNOWLEDGE)
+            {
+                gameEvent.eventType = GameEventType.GAME_MOVE;
+                gameEvent.data = "Reconnected To Server";
+                disconnectionHandler.cancelReconnection = true;
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 return;
             }
             else if (gameEvent.eventType == GameEventType.GAME_STARTED)
             {                
                 gameStartAckCount++;
+                gameEvent.eventType = GameEventType.GAME_MOVE;
+                gameEvent.data = $"Game Started Event Sent";
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 SendMove(new GameEvent() { eventType = GameEventType.GAME_ALIVE, data = (gameStartAckCount).ToString() });                
                 return;
             }else if(gameEvent.eventType == GameEventType.GAME_ALIVE)
@@ -321,13 +340,18 @@ namespace Hashbyte.Multiplayer
                 int gameAlive = int.Parse(gameEvent.data);
                 //gameAlive = 2, ack = 1 (I started late, let's start ping or pong
                 //gameAlive = 2, ack = 2 (Both started at same time, host starts the game)
-                if(gameAlive == 2 && gameStartAckCount == 2)
+                gameEvent.eventType = GameEventType.GAME_MOVE;
+                if (gameAlive == 2 && gameStartAckCount == 2)
                 {
                     Debug.Log($"Both started at same time");
+                    gameEvent.data = "BothStarted same";
+                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                     if (IsHost) disconnectionHandler.SendPing();
                 }else if(gameAlive == 2 && gameStartAckCount == 1)
                 {
                     Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
+                    gameEvent.data = $"{(IsHost ? "Host" : "Client")} started late";
+                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                     //I started late
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG });
                 }

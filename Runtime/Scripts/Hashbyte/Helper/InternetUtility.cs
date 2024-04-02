@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -7,6 +6,8 @@ namespace Hashbyte.Multiplayer
     public class InternetUtility
     {        
         private CancellationTokenSource source;
+        public delegate void InternetStatus(string status);
+        public event InternetStatus OnStatus;
 #if UNITY_EDITOR
         private bool IsInternallyConnected => true;
 # elif UNITY_ANDROID
@@ -28,8 +29,7 @@ namespace Hashbyte.Multiplayer
             checkNetwork = new AndroidJavaObject("com.hashbytestudio.checknetwork.CheckNetwork", currentActivity);
 #endif            
             source = new CancellationTokenSource();            
-        }
-
+        }        
         public void Dispose()
         {
             source.Cancel();
@@ -43,11 +43,14 @@ namespace Hashbyte.Multiplayer
             else if (!IsInternallyConnected) return false;
             else
             {
+                OnStatus?.Invoke("Unity and Plugin Says Connected");
                 //Both Unity and Android plugin confirmed we are connected to internet
                 //We ensure internet is reachable with final step of pinging google dns
                 int tryCount = 0;
                 while(tryCount < 2 && !source.Token.IsCancellationRequested)
                 {
+                    tryCount++;
+                    OnStatus?.Invoke($"Ping {tryCount}");
                     Ping ping = new Ping("8.8.8.8");
                     float timeout = 0;//3 seconds
                     System.DateTime currentTime = System.DateTime.Now;
@@ -57,10 +60,12 @@ namespace Hashbyte.Multiplayer
                         await Task.Yield();
                     }
                     if (ping.isDone && ping.time != -1)
-                    {                        
+                    {
+                        OnStatus?.Invoke($"Ping {tryCount} returned success");
                         //We are connected to internet
                         return true;                     
                     }
+                    OnStatus?.Invoke($"Ping {tryCount} failed");
                 }
             }
             return false;

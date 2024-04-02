@@ -23,7 +23,7 @@ namespace Hashbyte.Multiplayer
         private INetworkPlayer networkPlayer { get; set; }
         private List<INetworkEvents> networkListeners;
         public readonly InternetUtility internetUtility;
-        public MultiplayerService(ServiceType serviceType)
+        private MultiplayerService(ServiceType serviceType)
         {
             internetUtility = new InternetUtility();            
             switch (serviceType)
@@ -42,11 +42,6 @@ namespace Hashbyte.Multiplayer
                     break;
             }
             networkListeners = new List<INetworkEvents>();
-        }
-
-        private void OnConnected(bool connected)
-        {
-            Debug.Log($"Internet connection status {connected}");
         }
 
         public async Task Initialize(string playerId)
@@ -75,7 +70,7 @@ namespace Hashbyte.Multiplayer
             else if (!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
             IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
             if (roomResponse.Success)
-            {
+            {                
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
                 networkService.ConnectToServer(connectionSettings);
                 CurrentRoom = roomResponse.Room;
@@ -237,6 +232,7 @@ namespace Hashbyte.Multiplayer
             if (CurrentRoom.otherPlayerConnected)
             {
                 Debug.Log("Player Re-Connected");
+                SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
                 foreach (INetworkEvents networkListener in networkListeners)
                 {
                     networkListener.OnPlayerReconnected();
