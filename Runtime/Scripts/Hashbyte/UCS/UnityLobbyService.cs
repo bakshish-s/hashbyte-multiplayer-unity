@@ -57,7 +57,7 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> CreateLobby(Hashtable roomProperties, bool isPrivate, UnityRoomResponse relayResponse)
         {
             lobbyId = null;
-            Dictionary<string, DataObject> data = new Dictionary<string, DataObject>() { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Public, relayResponse.Room.RoomId) } };
+            Dictionary<string, DataObject> data = new Dictionary<string, DataObject>() { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Member, relayResponse.Room.RoomId) } };
             if (roomProperties != null)
             {
                 foreach (string key in roomProperties.Keys)
@@ -239,9 +239,8 @@ namespace Hashbyte.Multiplayer
             UpdatePlayerOptions options = new UpdatePlayerOptions();
             options.Data = new Dictionary<string, PlayerDataObject>()
             {
-                {"PlayerName", new PlayerDataObject(visibility: PlayerDataObject.VisibilityOptions.Public, playerName) },
-            };
-            options.Data.Add("Hash", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, "Byte"));
+                {"PlayerName", new PlayerDataObject(visibility: PlayerDataObject.VisibilityOptions.Member, playerName) },
+            };            
             try
             {
                 Lobby lobby = await LobbyService.Instance.UpdatePlayerAsync(lobbyId, playerId, options);

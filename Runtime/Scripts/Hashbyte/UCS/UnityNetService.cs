@@ -387,8 +387,7 @@ namespace Hashbyte.Multiplayer
         {
             if (gameEvent.eventType == GameEventType.GAME_STARTED)
             {
-                gameStartAckCount++;
-                Debug.Log($"INCREMENT INC: {gameStartAckCount}");
+                gameStartAckCount++;                
             }
             if (IsHost)
             {

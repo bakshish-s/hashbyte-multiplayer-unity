@@ -363,7 +363,7 @@ namespace Hashbyte.Multiplayer
                         RejoinAllocation(data[Constants.kRoomId].ToString());
                         foreach (INetworkEvents networkListener in networkListeners)
                         {
-                            networkListener.OnPlayerReconnected();
+                            //networkListener.OnPlayerReconnected();
                         }
                     }
                 }

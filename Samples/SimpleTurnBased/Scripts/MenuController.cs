@@ -188,8 +188,7 @@ namespace Hashbyte.Multiplayer.Demo
         {
             MultiplayerService.Instance.SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
             waitingMessage.text += "<color=green>Other Player Reconnected</color>\n";
-            UpdateMessageQueue("PR. GAME_START");
-            Debug.Log($"Reconnection Hashcode {GetHashCode()}");
+            UpdateMessageQueue("PR. GAME_START");            
         }
 
         public void OnConnectionStatusChange(bool connected)
