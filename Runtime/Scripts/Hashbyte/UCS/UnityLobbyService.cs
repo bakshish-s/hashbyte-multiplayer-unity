@@ -4,6 +4,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Lobbies;
+using System;
 
 namespace Hashbyte.Multiplayer
 {
@@ -17,6 +18,8 @@ namespace Hashbyte.Multiplayer
         public event LobbyDeletedDelegate OnLobbyDeleted;
         public delegate void LobbyDataUpdated(Hashtable data);
         public event LobbyDataUpdated OnDataUpdated;
+        public delegate void LobbyJoinFailure(FailureReason reason);
+        public event LobbyJoinFailure OnJoinFailure;
 
         private string lobbyId;
         private int lobbyLifespan = 120;
@@ -34,10 +37,10 @@ namespace Hashbyte.Multiplayer
 
         private void UnityLobbyService_DataChanged(Dictionary<string, ChangedOrRemovedLobbyValue<DataObject>> dataChanged)
         {
-            if(dataChanged != null && dataChanged.Count > 0)
+            if (dataChanged != null && dataChanged.Count > 0)
             {
                 Hashtable updatedData = new Hashtable();
-                foreach(string key in dataChanged.Keys)
+                foreach (string key in dataChanged.Keys)
                 {
                     updatedData.Add(key, dataChanged[key].Value.Value);
                 }
@@ -117,7 +120,11 @@ namespace Hashbyte.Multiplayer
             }
             catch (LobbyServiceException ex)
             {
-                Debug.Log(ex.Reason.ToString());
+                Debug.Log(ex.Reason.ToString() + " " + ex.ErrorCode);
+                if (Enum.IsDefined(typeof(FailureReason), (int)ex.Reason))
+                {
+                    OnJoinFailure?.Invoke((FailureReason)(int)ex.Reason);
+                }
                 return GetFailureRoomResponse(ex);
             }
         }
@@ -240,7 +247,7 @@ namespace Hashbyte.Multiplayer
             options.Data = new Dictionary<string, PlayerDataObject>()
             {
                 {"PlayerName", new PlayerDataObject(visibility: PlayerDataObject.VisibilityOptions.Member, playerName) },
-            };            
+            };
             try
             {
                 Lobby lobby = await LobbyService.Instance.UpdatePlayerAsync(lobbyId, playerId, options);

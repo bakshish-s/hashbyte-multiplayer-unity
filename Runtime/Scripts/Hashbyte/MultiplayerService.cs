@@ -375,5 +375,13 @@ namespace Hashbyte.Multiplayer
             await networkService.Disconnect();
             await ((UnityNetService)networkService).RejoinClientAllocation(roomId);
         }
+
+        public void OnRoomJoinFailed(FailureReason failureReason)
+        {
+            foreach (INetworkEvents networkListener in networkListeners)
+            {
+                networkListener.OnRoomJoinFailed(failureReason);
+            }
+        }
     }
 }

@@ -81,6 +81,11 @@ namespace Hashbyte.Multiplayer.Demo
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnRoomJoinFailed(FailureReason reason)
+        {
+            throw new System.NotImplementedException();
+        }
     }
     internal class TileManager
     {

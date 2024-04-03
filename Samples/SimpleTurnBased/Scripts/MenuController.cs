@@ -204,5 +204,10 @@ namespace Hashbyte.Multiplayer.Demo
                 waitingMessage.text += "<color=red>INTERNET OFF</color>\n";
             }
         }
+
+        public void OnRoomJoinFailed(FailureReason reason)
+        {
+            Debug.Log("Invalid code");
+        }
     }
 }

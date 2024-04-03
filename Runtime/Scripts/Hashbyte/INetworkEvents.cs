@@ -10,6 +10,7 @@ namespace Hashbyte.Multiplayer
         public void OnPlayerReconnected();
         public void OnConnectionStatusChange(bool connected);
         public void OnRoomJoined(GameRoom roomJoined);
+        public void OnRoomJoinFailed(FailureReason reason);
         public void OnRoomDeleted();
         public void OnRoomPropertiesUpdated(System.Collections.Hashtable roomProperties) ;                
     }            

@@ -79,5 +79,10 @@ namespace Hashbyte.Multiplayer
         {
             throw new System.NotImplementedException();
         }
+
+        public void OnRoomJoinFailed(FailureReason reason)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

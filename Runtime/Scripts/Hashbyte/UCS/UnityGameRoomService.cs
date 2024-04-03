@@ -23,6 +23,7 @@ namespace Hashbyte.Multiplayer
                 lobbyService.OnPlayersLeft += multiplayerEvents.OnPlayerLeftRoom;
                 lobbyService.OnLobbyDeleted += multiplayerEvents.OnRoomDeleted;
                 lobbyService.OnDataUpdated += multiplayerEvents.OnRoomDataUpdated;
+                lobbyService.OnJoinFailure += multiplayerEvents.OnRoomJoinFailed;
             }
         }
 
@@ -98,11 +99,11 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> JoinRoomByCode(string roomCode, Hashtable options)
         {
             roomResponse = await lobbyService.JoinLobbyByCode(roomCode, options);
-            if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
+            if (roomResponse.Success && await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
                 ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
             else
                 roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
-            multiplayerEventListener?.JoinRoomResponse(roomResponse);
+            multiplayerEventListener?.JoinRoomResponse(roomResponse);            
             return roomResponse;
         }
 

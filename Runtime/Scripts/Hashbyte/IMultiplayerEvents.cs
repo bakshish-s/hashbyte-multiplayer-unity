@@ -11,7 +11,14 @@ namespace Hashbyte.Multiplayer
         public void OtherPlayerNotResponding();
         public void OnOtherPlayerReconnected();
         public void OnRoomDeleted();
-        public void OnRoomDataUpdated(System.Collections.Hashtable data);  
+        public void OnRoomDataUpdated(System.Collections.Hashtable data);
+        public void OnRoomJoinFailed(FailureReason failureReason);
         public System.Collections.Generic.List<INetworkEvents> GetTurnEventListeners();
+    }
+
+    public enum FailureReason
+    {
+        INVALID_CODE = 16010,
+        ROOM_FULL
     }
 }
