@@ -124,6 +124,11 @@ namespace Hashbyte.Multiplayer
             bool disconnected = true;
             while (waitTime > 0)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    ((UnityNetService)network).ReceiveEvent("3:CANCEL");
+                    break;
+                }
                 await Task.Delay(200);
                 if (await MultiplayerService.Instance.internetUtility.IsConnectedToInternet() && !cancellationToken.IsCancellationRequested && waitTime > 0)
                 {
@@ -139,6 +144,7 @@ namespace Hashbyte.Multiplayer
             {
                 //Resume game. Ping player for missed moves
                 Debug.Log("Bakshish. Reconnected to server. Will wait for other player acknowledgement");
+                ((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
                 await Task.Delay(2000);
                 if (!cancelReconnection)
                 {                    

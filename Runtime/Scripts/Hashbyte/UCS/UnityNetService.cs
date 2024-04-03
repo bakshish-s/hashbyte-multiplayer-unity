@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using Unity.Services.Core;
 namespace Hashbyte.Multiplayer
 {
     public class UnityNetService : INetworkService
@@ -20,6 +19,7 @@ namespace Hashbyte.Multiplayer
         private IMultiplayerEvents multiplayerEvents;
         private CancellationTokenSource cancellationTokenSource;
         private DisconnectionHandler disconnectionHandler;
+        private bool cancelConnection;
         internal UnityNetService(IMultiplayerEvents _multiplayerEvents)
         {
             multiplayerEvents = _multiplayerEvents; disconnectionHandler = new DisconnectionHandler(this);
@@ -67,9 +67,22 @@ namespace Hashbyte.Multiplayer
             {
                 Debug.Log($"Asking Host to accept my connection");
                 clientConnection = driver.Connect();
+                ConnectionTimeout();
                 return true;
             }
             return false;
+        }
+
+        private async void ConnectionTimeout()
+        {
+            cancelConnection = true;
+            await Task.Delay(8000);
+            if (cancelConnection)
+            {
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(new GameEvent() { eventType = GameEventType.GAME_ENDED }));
+                MultiplayerService.Instance.LeaveRoom();
+                Debug.Log($"Host did not accept my connection, closing connection");
+            }
         }
 
         public async Task RejoinClientAllocation(string allocationId)
@@ -231,6 +244,7 @@ namespace Hashbyte.Multiplayer
                 // Handle Connect events.
                 case NetworkEvent.Type.Connect:
                     Debug.Log("Player connected to the Host");
+                    cancelConnection = false;
                     cancellationTokenSource = new CancellationTokenSource();
                     disconnectionHandler.SetCancellationToken(cancellationTokenSource.Token);
                     multiplayerEvents.OnPlayerConnected();
@@ -243,23 +257,24 @@ namespace Hashbyte.Multiplayer
                     {
                         case Unity.Networking.Transport.Error.DisconnectReason.Default:
                             break;
-                        case Unity.Networking.Transport.Error.DisconnectReason.Timeout:                           
+                        case Unity.Networking.Transport.Error.DisconnectReason.Timeout:
                             //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
                             Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:
                             Debug.Log($"Disconnection received. Max Attempts Received, Abandon game");
+                            cancellationTokenSource?.Cancel();
                             //Abandon game ??
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote:
                             Debug.Log($"Disconnection received. Player left intentionally");
+                            cancellationTokenSource?.Cancel();
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.Count:
                             break;
                         default:
                             break;
                     }
-                    cancellationTokenSource?.Cancel();
                     break;
             }
         }
@@ -328,14 +343,16 @@ namespace Hashbyte.Multiplayer
                 return;
             }
             else if (gameEvent.eventType == GameEventType.GAME_STARTED)
-            {                
+            {
                 gameStartAckCount++;
+                Debug.Log($"INCREMENT INC: {gameStartAckCount}");
                 gameEvent.eventType = GameEventType.GAME_MOVE;
-                gameEvent.data = $"Game Started Event Sent";
+                gameEvent.data = $"Game Started Event Received {gameStartAckCount}";
                 multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
-                SendMove(new GameEvent() { eventType = GameEventType.GAME_ALIVE, data = (gameStartAckCount).ToString() });                
+                SendMove(new GameEvent() { eventType = GameEventType.GAME_ALIVE, data = (gameStartAckCount).ToString() });
                 return;
-            }else if(gameEvent.eventType == GameEventType.GAME_ALIVE)
+            }
+            else if (gameEvent.eventType == GameEventType.GAME_ALIVE)
             {
                 int gameAlive = int.Parse(gameEvent.data);
                 //gameAlive = 2, ack = 1 (I started late, let's start ping or pong
@@ -347,13 +364,19 @@ namespace Hashbyte.Multiplayer
                     gameEvent.data = "BothStarted same";
                     multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                     if (IsHost) disconnectionHandler.SendPing();
-                }else if(gameAlive == 2 && gameStartAckCount == 1)
+                }
+                else if (gameAlive == 2 && gameStartAckCount == 1)
                 {
                     Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
                     gameEvent.data = $"{(IsHost ? "Host" : "Client")} started late";
                     multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                     //I started late
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG });
+                }
+                else
+                {
+                    gameEvent.data = $"Something wrong happened {gameAlive},{gameStartAckCount}";
+                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 }
                 return;
             }
@@ -362,6 +385,11 @@ namespace Hashbyte.Multiplayer
         private int gameStartAckCount = 0;
         public void SendMove(GameEvent gameEvent)
         {
+            if (gameEvent.eventType == GameEventType.GAME_STARTED)
+            {
+                gameStartAckCount++;
+                Debug.Log($"INCREMENT INC: {gameStartAckCount}");
+            }
             if (IsHost)
             {
                 if (!serverConnections.IsCreated) return;
@@ -377,11 +405,7 @@ namespace Hashbyte.Multiplayer
         }
 
         private void SendMoveToConnection(GameEvent gameEvent, NetworkConnection connection)
-        {
-            if (gameEvent.eventType == GameEventType.GAME_STARTED)
-            {                
-                gameStartAckCount++;
-            }
+        {            
             int statusOfSend = driver.BeginSend(connection, out var writer);
             if (statusOfSend == 0)
             {

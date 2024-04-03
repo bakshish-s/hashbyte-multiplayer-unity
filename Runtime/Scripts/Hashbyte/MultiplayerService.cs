@@ -53,7 +53,7 @@ namespace Hashbyte.Multiplayer
         }
 
         public void RegisterCallbacks(INetworkEvents networkEventListener)
-        {
+        {            
             networkListeners.Add(networkEventListener);
         }
 
@@ -231,8 +231,7 @@ namespace Hashbyte.Multiplayer
             //Check if this is a reconnection
             if (CurrentRoom.otherPlayerConnected)
             {
-                Debug.Log("Player Re-Connected");
-                SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
+                Debug.Log("Player Re-Connected");                
                 foreach (INetworkEvents networkListener in networkListeners)
                 {
                     networkListener.OnPlayerReconnected();

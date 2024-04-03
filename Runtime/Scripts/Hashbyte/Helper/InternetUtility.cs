@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Hashbyte.Multiplayer
 {
     public class InternetUtility
-    {        
+    {
         private CancellationTokenSource source;
         public delegate void InternetStatus(string status);
         public event InternetStatus OnStatus;
@@ -28,33 +28,33 @@ namespace Hashbyte.Multiplayer
             AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
             checkNetwork = new AndroidJavaObject("com.hashbytestudio.checknetwork.CheckNetwork", currentActivity);
 #endif            
-            source = new CancellationTokenSource();            
-        }        
+            source = new CancellationTokenSource();
+        }
         public void Dispose()
         {
             source.Cancel();
         }
 
         public async Task<bool> IsConnectedToInternet()
-        {            
+        {
             //#1 Check Unity's in build internt check, if it returns false, we definitely not connected to internet
             if (Application.internetReachability == NetworkReachability.NotReachable) return false;
             //#2 If Android plugin returns false, that ensures internet is not connected
             else if (!IsInternallyConnected) return false;
             else
             {
-                OnStatus?.Invoke("Unity and Plugin Says Connected");
+                //OnStatus?.Invoke("Unity and Plugin Says Connected");
                 //Both Unity and Android plugin confirmed we are connected to internet
                 //We ensure internet is reachable with final step of pinging google dns
                 int tryCount = 0;
-                while(tryCount < 2 && !source.Token.IsCancellationRequested)
+                while (tryCount < 2 && !source.Token.IsCancellationRequested)
                 {
                     tryCount++;
-                    OnStatus?.Invoke($"Ping {tryCount}");
+                    //OnStatus?.Invoke($"Ping {tryCount}");
                     Ping ping = new Ping("8.8.8.8");
                     float timeout = 0;//3 seconds
                     System.DateTime currentTime = System.DateTime.Now;
-                    while(!ping.isDone && timeout < 2000 && !source.Token.IsCancellationRequested)
+                    while (!ping.isDone && timeout < 2000 && !source.Token.IsCancellationRequested)
                     {
                         timeout = (System.DateTime.Now - currentTime).Milliseconds;
                         await Task.Yield();
@@ -63,10 +63,10 @@ namespace Hashbyte.Multiplayer
                     {
                         OnStatus?.Invoke($"Ping {tryCount} returned success");
                         //We are connected to internet
-                        return true;                     
+                        return true;
                     }
-                    OnStatus?.Invoke($"Ping {tryCount} failed");
                 }
+                OnStatus?.Invoke($"Ping failed");
             }
             return false;
         }

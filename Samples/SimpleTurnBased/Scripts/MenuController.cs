@@ -70,6 +70,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         void INetworkEvents.OnPlayerConnected()
         {
+            UpdateMessageQueue("Player Connected to Host. Sending Game Started event");
             playButton.interactable = true;
             MultiplayerService.Instance.SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
         }
@@ -81,6 +82,7 @@ namespace Hashbyte.Multiplayer.Demo
                 case GameEventType.GAME_STARTED:
                     break;
                 case GameEventType.GAME_ENDED:
+                    DeactivateAllPanels(menuPanel);
                     break;
                 case GameEventType.GAME_MOVE:
                     UpdateMessageQueue(gameEvent.data);
@@ -184,7 +186,10 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnPlayerReconnected()
         {
+            MultiplayerService.Instance.SendMove(new GameEvent() { eventType = GameEventType.GAME_STARTED });
             waitingMessage.text += "<color=green>Other Player Reconnected</color>\n";
+            UpdateMessageQueue("PR. GAME_START");
+            Debug.Log($"Reconnection Hashcode {GetHashCode()}");
         }
 
         public void OnConnectionStatusChange(bool connected)
