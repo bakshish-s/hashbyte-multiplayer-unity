@@ -51,6 +51,7 @@ namespace Hashbyte.Multiplayer
             bool success = await UnityRelayService.Instance.CreateRelaySession();
             if (success)
             {
+                if (roomResponse == null) roomResponse = new UnityRoomResponse();
                 ((UnityRoomResponse)roomResponse).hostAllocation = UnityRelayService.Instance.HostAllocation;
                 ((UnityRoomResponse)roomResponse).Room = new GameRoom() { RoomId = UnityRelayService.Instance.JoinCode };                
             }
