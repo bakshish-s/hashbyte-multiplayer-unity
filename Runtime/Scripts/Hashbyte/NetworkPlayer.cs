@@ -9,7 +9,7 @@ namespace Hashbyte.Multiplayer
 
         public int ActorNumber { get; set; }
 
-        public Hashtable PlayerDaya { get; set; }
+        public Hashtable PlayerData { get; set; }
 
         public void OnTurnUpdate(bool isMyTurn)
         {

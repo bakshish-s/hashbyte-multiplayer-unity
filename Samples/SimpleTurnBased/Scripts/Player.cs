@@ -27,7 +27,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public string PlayerName => throw new System.NotImplementedException();
 
-        public Hashtable PlayerDaya => throw new System.NotImplementedException();
+        public Hashtable PlayerData => throw new System.NotImplementedException();
 
         public void JoinedGame(string roomId)
         {

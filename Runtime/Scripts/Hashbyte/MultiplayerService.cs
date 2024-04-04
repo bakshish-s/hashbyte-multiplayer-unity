@@ -48,13 +48,19 @@ namespace Hashbyte.Multiplayer
         {
             if (isInitialized) return;
             if (string.IsNullOrEmpty(playerId)) playerId = "Player_" + System.Guid.NewGuid().ToString();
-            networkPlayer = new NetworkPlayer() { PlayerId = playerId, PlayerDaya = playerData};
+            networkPlayer = new NetworkPlayer() { PlayerId = playerId, PlayerData = playerData};
             await authService.AuthenticateWith(networkPlayer);
         }
 
         public void RegisterCallbacks(INetworkEvents networkEventListener)
         {            
             networkListeners.Add(networkEventListener);
+        }
+
+        public void UnRegisterCallbacks(INetworkEvents networkEventListener)
+        {
+            if(networkListeners.Contains(networkEventListener))
+                networkListeners.Remove(networkEventListener);
         }
 
         public async void JoinOrCreateGame(Hashtable roomProperties = null)
@@ -68,7 +74,7 @@ namespace Hashbyte.Multiplayer
             if (!isInitialized) await Initialize(null, null);
             if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
             else if (!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
-            IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties, networkPlayer.PlayerDaya);
+            IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties, networkPlayer.PlayerData);
             if (roomResponse.Success)
             {                
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
@@ -171,7 +177,7 @@ namespace Hashbyte.Multiplayer
 
         public async void CreatePrivateGame(Hashtable gameOptions)
         {
-            await CreatePrivateGameAsync(gameOptions, networkPlayer.PlayerDaya);
+            await CreatePrivateGameAsync(gameOptions, networkPlayer.PlayerData);
         }
 
         public async Task<string> CreatePrivateGameAsync(Hashtable gameOptions, Hashtable playerOptions)
@@ -193,7 +199,7 @@ namespace Hashbyte.Multiplayer
         }
         public async void JoinPrivateGame(string passcode)
         {
-            await JoinPrivateGameAsync(passcode, networkPlayer.PlayerDaya);
+            await JoinPrivateGameAsync(passcode, networkPlayer.PlayerData);
         }
         public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode, Hashtable playerOptions)
         {

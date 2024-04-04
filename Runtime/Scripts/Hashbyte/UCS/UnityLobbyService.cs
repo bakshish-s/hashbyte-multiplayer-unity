@@ -194,7 +194,7 @@ namespace Hashbyte.Multiplayer
                     PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value,
                     ActorNumber = i + 1,
                     PlayerId = lobby.Players[i].Data[Constants.kPlayerName].Value,    
-                    PlayerDaya = playerData,
+                    PlayerData = playerData,
                 });
             }
             gameRoom.RoomId = lobby.Data[Constants.kRoomId].Value;
@@ -282,7 +282,7 @@ namespace Hashbyte.Multiplayer
                     PlayerName = lobbyPlayer.Player.Data[Constants.kPlayerName].Value,
                     ActorNumber = lobbyPlayer.PlayerIndex + 1,
                     PlayerId = lobbyPlayer.Player.Data[Constants.kPlayerId].Value,
-                    PlayerDaya = playerData,
+                    PlayerData = playerData,
                 });
             }
             OnPlayersJoined?.Invoke(playerJoinedList);
