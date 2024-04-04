@@ -27,9 +27,9 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> JoinOrCreateRoom(Hashtable roomProperties)
+        public async Task<IRoomResponse> JoinOrCreateRoom(Hashtable roomProperties, Hashtable playerProperties)
         {
-            roomResponse = await lobbyService.QuickJoinLobby(roomProperties);
+            roomResponse = await lobbyService.QuickJoinLobby(roomProperties, playerProperties);
             if (roomResponse.Success)
             {
                 if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
@@ -40,13 +40,13 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                roomResponse = await CreateRoom(false, roomProperties);
+                roomResponse = await CreateRoom(false, roomProperties, playerProperties);
             }
             return roomResponse;
 
 
         }
-        public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties)
+        public async Task<IRoomResponse> CreateRoom(bool isPrivate, Hashtable roomProperties, Hashtable playerOptions)
         {
             bool success = await UnityRelayService.Instance.CreateRelaySession();
             if (success)
@@ -58,7 +58,7 @@ namespace Hashbyte.Multiplayer
             {
                 roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
             }
-            roomResponse = await lobbyService.CreateLobby(roomProperties, isPrivate, (UnityRoomResponse)roomResponse);
+            roomResponse = await lobbyService.CreateLobby(roomProperties, playerOptions, isPrivate, (UnityRoomResponse)roomResponse);
             multiplayerEventListener?.JoinRoomResponse(roomResponse);
             return roomResponse;
         }
@@ -86,9 +86,9 @@ namespace Hashbyte.Multiplayer
             }
             return availableRooms;
         }
-        public async Task<IRoomResponse> JoinRoom(string roomId, Hashtable options)
+        public async Task<IRoomResponse> JoinRoom(string roomId, Hashtable options, Hashtable playerOptions)
         {
-            roomResponse = await lobbyService.JoinLobbyById(roomId, options);
+            roomResponse = await lobbyService.JoinLobbyById(roomId, options, playerOptions);
             if (await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
                 ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
             else
@@ -96,9 +96,9 @@ namespace Hashbyte.Multiplayer
             multiplayerEventListener?.JoinRoomResponse(roomResponse);
             return roomResponse;
         }
-        public async Task<IRoomResponse> JoinRoomByCode(string roomCode, Hashtable options)
+        public async Task<IRoomResponse> JoinRoomByCode(string roomCode, Hashtable options, Hashtable playerOptions)
         {
-            roomResponse = await lobbyService.JoinLobbyByCode(roomCode, options);
+            roomResponse = await lobbyService.JoinLobbyByCode(roomCode, options, playerOptions);
             if (roomResponse.Success && await UnityRelayService.Instance.JoinRelaySession(roomResponse.Room.RoomId))
                 ((UnityRoomResponse)roomResponse).clientAllocation = UnityRelayService.Instance.ClientAllocation;
             else

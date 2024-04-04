@@ -22,7 +22,7 @@ namespace Hashbyte.Multiplayer.Demo
             seedOption = new Hashtable { { "seed", System.Guid.NewGuid() } };
             MultiplayerService.Instance.RegisterCallbacks(this);
             MultiplayerService.Instance.internetUtility.OnStatus += UpdateMessageQueue;
-            await MultiplayerService.Instance.Initialize(playerId);
+            await MultiplayerService.Instance.Initialize(playerId, null);
             menuPanel.SetActive(true);
         }
         

@@ -1,4 +1,5 @@
 using Hashbyte.Multiplayer.Demo;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
@@ -25,6 +26,8 @@ namespace Hashbyte.Multiplayer.Demo
         public int ActorNumber {get; set;}
 
         public string PlayerName => throw new System.NotImplementedException();
+
+        public Hashtable PlayerDaya => throw new System.NotImplementedException();
 
         public void JoinedGame(string roomId)
         {

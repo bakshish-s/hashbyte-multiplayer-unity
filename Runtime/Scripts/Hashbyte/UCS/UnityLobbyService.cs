@@ -57,7 +57,7 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> CreateLobby(Hashtable roomProperties, bool isPrivate, UnityRoomResponse relayResponse)
+        public async Task<IRoomResponse> CreateLobby(Hashtable roomProperties, Hashtable playerOptions, bool isPrivate, UnityRoomResponse relayResponse)
         {
             lobbyId = null;
             Dictionary<string, DataObject> data = new Dictionary<string, DataObject>() { { Constants.kRoomId, new DataObject(DataObject.VisibilityOptions.Member, relayResponse.Room.RoomId) } };
@@ -69,7 +69,7 @@ namespace Hashbyte.Multiplayer
             CreateLobbyOptions options = new CreateLobbyOptions()
             {
                 Data = data,
-                Player = GetLobbyPlayer(roomProperties[Constants.kPlayerName].ToString()),
+                Player = GetLobbyPlayer(roomProperties[Constants.kPlayerName].ToString(), playerOptions),
                 IsPrivate = isPrivate,
             };
             try
@@ -108,10 +108,10 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> JoinLobbyByCode(string lobbyCode, Hashtable options)
+        public async Task<IRoomResponse> JoinLobbyByCode(string lobbyCode, Hashtable options, Hashtable playerOptions)
         {
             JoinLobbyByCodeOptions joinOptions = new JoinLobbyByCodeOptions();
-            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString());
+            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString(), playerOptions);
             try
             {
                 Lobby lobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode, joinOptions);
@@ -129,10 +129,10 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> JoinLobbyById(string lobbyId, Hashtable options)
+        public async Task<IRoomResponse> JoinLobbyById(string lobbyId, Hashtable options, Hashtable playerOptions)
         {
             JoinLobbyByIdOptions joinOptions = new JoinLobbyByIdOptions();
-            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString());
+            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString(), playerOptions);
             try
             {
                 Lobby lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions);
@@ -146,10 +146,10 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public async Task<IRoomResponse> QuickJoinLobby(Hashtable options)
+        public async Task<IRoomResponse> QuickJoinLobby(Hashtable options, Hashtable playerOptions)
         {
             QuickJoinLobbyOptions joinOptions = new QuickJoinLobbyOptions();
-            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString());
+            joinOptions.Player = GetLobbyPlayer(options[Constants.kPlayerName].ToString(), playerOptions);
             try
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync(joinOptions);
@@ -184,11 +184,17 @@ namespace Hashbyte.Multiplayer
             }
             for (int i = 0; i < lobby.Players.Count; i++)
             {
+                Hashtable playerData = new Hashtable();
+                foreach(string key in lobby.Players[i].Data.Keys)
+                {
+                    playerData.Add(key, lobby.Players[i].Data[key].Value);  
+                }
                 gameRoom.AddPlayer(new NetworkPlayer()
                 {
                     PlayerName = lobby.Players[i].Data[Constants.kPlayerName].Value,
                     ActorNumber = i + 1,
-                    PlayerId = lobby.Players[i].Data[Constants.kPlayerName].Value
+                    PlayerId = lobby.Players[i].Data[Constants.kPlayerName].Value,    
+                    PlayerDaya = playerData,
                 });
             }
             gameRoom.RoomId = lobby.Data[Constants.kRoomId].Value;
@@ -265,20 +271,34 @@ namespace Hashbyte.Multiplayer
             foreach (LobbyPlayerJoined lobbyPlayer in playersJoined)
             {
                 Debug.Log($"Player Joined {lobbyPlayer.Player.Data[Constants.kPlayerName].Value}");
+
+                Hashtable playerData = new Hashtable();
+                foreach (string key in lobbyPlayer.Player.Data.Keys)
+                {
+                    playerData.Add(key, lobbyPlayer.Player.Data[key].Value);
+                }
                 playerJoinedList.Add(new NetworkPlayer()
                 {
                     PlayerName = lobbyPlayer.Player.Data[Constants.kPlayerName].Value,
                     ActorNumber = lobbyPlayer.PlayerIndex + 1,
-                    PlayerId = lobbyPlayer.Player.Data[Constants.kPlayerId].Value
+                    PlayerId = lobbyPlayer.Player.Data[Constants.kPlayerId].Value,
+                    PlayerDaya = playerData,
                 });
             }
             OnPlayersJoined?.Invoke(playerJoinedList);
         }
-        private Player GetLobbyPlayer(string playerName)
+        private Player GetLobbyPlayer(string playerName, Hashtable playerOptions)
         {
             Player lobbyPlayer = new Player();
             lobbyPlayer.Data = new Dictionary<string, PlayerDataObject>() { { Constants.kPlayerName, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName) },
                 {Constants.kPlayerId, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, Unity.Services.Authentication.AuthenticationService.Instance.PlayerId) } };
+            if(playerOptions != null)
+            {
+                foreach(string key in playerOptions.Keys)
+                {
+                    lobbyPlayer.Data.Add(key, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerOptions[key].ToString()));
+                }
+            }
             return lobbyPlayer;
         }
 

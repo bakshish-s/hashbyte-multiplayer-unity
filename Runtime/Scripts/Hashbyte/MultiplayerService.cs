@@ -44,11 +44,11 @@ namespace Hashbyte.Multiplayer
             networkListeners = new List<INetworkEvents>();
         }
 
-        public async Task Initialize(string playerId)
+        public async Task Initialize(string playerId, Hashtable playerData)
         {
             if (isInitialized) return;
             if (string.IsNullOrEmpty(playerId)) playerId = "Player_" + System.Guid.NewGuid().ToString();
-            networkPlayer = new NetworkPlayer() { PlayerId = playerId, };
+            networkPlayer = new NetworkPlayer() { PlayerId = playerId, PlayerDaya = playerData};
             await authService.AuthenticateWith(networkPlayer);
         }
 
@@ -65,10 +65,10 @@ namespace Hashbyte.Multiplayer
         public async Task<IRoomResponse> JoinOrCreateGameAsync(Hashtable roomProperties = null)
         {
             Debug.Log($"Auth Service initialization status {isInitialized}");
-            if (!isInitialized) await Initialize(null);
+            if (!isInitialized) await Initialize(null, null);
             if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
             else if (!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
-            IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties);
+            IRoomResponse roomResponse = await roomService.JoinOrCreateRoom(roomProperties, networkPlayer.PlayerDaya);
             if (roomResponse.Success)
             {                
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
@@ -171,14 +171,14 @@ namespace Hashbyte.Multiplayer
 
         public async void CreatePrivateGame(Hashtable gameOptions)
         {
-            await CreatePrivateGameAsync(gameOptions);
+            await CreatePrivateGameAsync(gameOptions, networkPlayer.PlayerDaya);
         }
 
-        public async Task<string> CreatePrivateGameAsync(Hashtable gameOptions)
+        public async Task<string> CreatePrivateGameAsync(Hashtable gameOptions, Hashtable playerOptions)
         {
             if (gameOptions == null) gameOptions = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
             else gameOptions.Add(Constants.kPlayerName, networkPlayer.PlayerId);
-            IRoomResponse roomResponse = await roomService.CreateRoom(true, gameOptions);
+            IRoomResponse roomResponse = await roomService.CreateRoom(true, gameOptions, playerOptions);
             if (roomResponse.Success)
             {
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
@@ -193,12 +193,12 @@ namespace Hashbyte.Multiplayer
         }
         public async void JoinPrivateGame(string passcode)
         {
-            await JoinPrivateGameAsync(passcode);
+            await JoinPrivateGameAsync(passcode, networkPlayer.PlayerDaya);
         }
-        public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode)
+        public async Task<IRoomResponse> JoinPrivateGameAsync(string passcode, Hashtable playerOptions)
         {
             Hashtable gameOptions = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
-            IRoomResponse roomResponse = await roomService.JoinRoomByCode(passcode, gameOptions);
+            IRoomResponse roomResponse = await roomService.JoinRoomByCode(passcode, gameOptions, playerOptions);
             if (roomResponse.Success)
             {
                 connectionSettings.Initialize(Constants.kConnectionType, roomResponse);
@@ -381,6 +381,22 @@ namespace Hashbyte.Multiplayer
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnRoomJoinFailed(failureReason);
+            }
+        }
+
+        public void CancelMatchmaking()
+        {
+            if(CurrentRoom != null)
+            {
+                if (CurrentRoom.otherPlayerConnected)
+                {
+                    LeaveRoom();
+                }
+            }
+            else
+            //we might be in process of creating a lobby or creating relay session
+            {
+
             }
         }
     }

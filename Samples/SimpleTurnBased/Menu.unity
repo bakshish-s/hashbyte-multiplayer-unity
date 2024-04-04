@@ -4640,7 +4640,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3649fbfb602ef940abec9ed7173dc31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerId: Device
+  playerId: Unity
   menuPanel: {fileID: 1608139416}
   lobbyPanel: {fileID: 1000196100}
   waitingPanel: {fileID: 953268124}

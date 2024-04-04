@@ -19,7 +19,7 @@ namespace Hashbyte.Multiplayer
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
             }
-            if (initializeOnStart) await MultiplayerService.Instance.Initialize(null);//HashbyteNetwork.Instance.Initialize(serviceType);
+            if (initializeOnStart) await MultiplayerService.Instance.Initialize(null, null);//HashbyteNetwork.Instance.Initialize(serviceType);
         }        
 
         // Update is called once per frame
