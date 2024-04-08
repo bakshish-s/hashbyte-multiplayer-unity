@@ -3,13 +3,15 @@ namespace Hashbyte.Multiplayer
     public struct GameEvent
     {
         public GameEventType eventType;
+        public DataSize size;
         public string data;
-        public static GameEvent GameStartEvent(string playerId, string extraData = null)
+        public static GameEvent GameStartEvent(string playerId, string extraData = null, DataSize dataSize = DataSize.NORMAL)
         {
             return new GameEvent()
             {
                 eventType = GameEventType.GAME_STARTED,
                 data = extraData,
+                size = dataSize,
             };
         }
         public static GameEvent GameMoveEvent(string playerId, string extraData)
@@ -17,7 +19,7 @@ namespace Hashbyte.Multiplayer
             return new GameEvent()
             {
                 eventType = GameEventType.GAME_MOVE,
-                data = extraData
+                data = extraData,                
             };
         }
     }
@@ -33,5 +35,12 @@ namespace Hashbyte.Multiplayer
         PONG,
         PLAYER_RECONNECTED,
         RECONNECTION_ACKNOWLEDGE,
+    }
+
+    public enum DataSize
+    {
+        NORMAL,
+        MEDIUM,
+        LARGE
     }
 }

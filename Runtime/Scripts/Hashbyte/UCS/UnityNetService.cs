@@ -236,9 +236,26 @@ namespace Hashbyte.Multiplayer
             {
                 // Handle Relay events.
                 case NetworkEvent.Type.Data:
-                    Unity.Collections.FixedString32Bytes msg = dataReader.ReadFixedString32();
+                    Debug.Log($"Size of message received {dataReader.Length}");
+                    if (dataReader.Length > 32)
+                    {
+                        if(dataReader.Length > 64)
+                        {
+                            Unity.Collections.FixedString128Bytes msg = dataReader.ReadFixedString128();
+                            ReceiveEvent(msg.ToString());
+                        }
+                        else
+                        {
+                            Unity.Collections.FixedString64Bytes msg = dataReader.ReadFixedString64();
+                            ReceiveEvent(msg.ToString());
+                        }
+                    }
+                    else
+                    {
+                        Unity.Collections.FixedString32Bytes msg = dataReader.ReadFixedString32();
+                        ReceiveEvent(msg.ToString());
+                    }
                     //Debug.Log($"Player received msg: {msg}");
-                    ReceiveEvent(msg);
                     break;
 
                 // Handle Connect events.
@@ -299,10 +316,10 @@ namespace Hashbyte.Multiplayer
             }
         }
 
-        public virtual void ReceiveEvent(FixedString32Bytes eventData)
+        public virtual void ReceiveEvent(string eventData)
         {
             GameEvent gameEvent = new GameEvent();
-            string[] eventSplit = eventData.ToString().Split(':');
+            string[] eventSplit = eventData.Split(':');
             if (eventSplit.Length > 0)
             {
                 int evType = int.Parse(eventSplit[0]);
@@ -387,7 +404,7 @@ namespace Hashbyte.Multiplayer
         {
             if (gameEvent.eventType == GameEventType.GAME_STARTED)
             {
-                gameStartAckCount++;                
+                gameStartAckCount++;
             }
             if (IsHost)
             {
@@ -404,19 +421,33 @@ namespace Hashbyte.Multiplayer
         }
 
         private void SendMoveToConnection(GameEvent gameEvent, NetworkConnection connection)
-        {            
+        {
             int statusOfSend = driver.BeginSend(connection, out var writer);
             if (statusOfSend == 0)
             {
-                FixedString32Bytes msg = $"{(int)gameEvent.eventType}:{gameEvent.data}";
-                // Send the message. Aside from FixedString32, many different types can be used.
-                writer.WriteFixedString32(msg);
+                switch (gameEvent.size)
+                {
+                    case DataSize.NORMAL:
+                        FixedString32Bytes msg = $"{(int)gameEvent.eventType}:{gameEvent.data}";
+                        writer.WriteFixedString32(msg);
+                        break;
+                    case DataSize.MEDIUM:
+                        FixedString64Bytes msgMedium = $"{(int)gameEvent.eventType}:{gameEvent.data}";
+                        writer.WriteFixedString64(msgMedium);
+                        break;
+                    case DataSize.LARGE:
+                        FixedString128Bytes msgLarge = $"{(int)gameEvent.eventType}:{gameEvent.data}";
+                        writer.WriteFixedString128(msgLarge);
+                        break;
+                    default:
+                        break;
+                }
                 int endStatus = driver.EndSend(writer);
                 //Debug.Log($"Base Event Msg {msg} -- {endStatus}");
             }
             else
             {
-                //Debug.Log($"Send failed because of reason {statusOfSend}");
+                Debug.Log($"Send failed because of reason {statusOfSend}, Need to handle it");
             }
         }
     }
