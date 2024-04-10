@@ -236,7 +236,7 @@ namespace Hashbyte.Multiplayer
             {
                 // Handle Relay events.
                 case NetworkEvent.Type.Data:
-                    Debug.Log($"Size of message received {dataReader.Length}");
+                   // Debug.Log($"Size of message received {dataReader.Length}");
                     if (dataReader.Length > 32)
                     {
                         if(dataReader.Length > 64)
