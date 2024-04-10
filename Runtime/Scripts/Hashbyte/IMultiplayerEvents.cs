@@ -19,6 +19,7 @@ namespace Hashbyte.Multiplayer
     public enum FailureReason
     {
         INVALID_CODE = 16010,
-        ROOM_FULL
+        LOBBY_NOT_FOUND = 16001,
+        ROOM_FULL = 0,
     }
 }
