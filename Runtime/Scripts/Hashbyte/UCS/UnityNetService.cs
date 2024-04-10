@@ -362,10 +362,6 @@ namespace Hashbyte.Multiplayer
             else if (gameEvent.eventType == GameEventType.GAME_STARTED)
             {
                 gameStartAckCount++;
-                Debug.Log($"INCREMENT INC: {gameStartAckCount}");
-                gameEvent.eventType = GameEventType.GAME_MOVE;
-                gameEvent.data = $"Game Started Event Received {gameStartAckCount}";
-                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 SendMove(new GameEvent() { eventType = GameEventType.GAME_ALIVE, data = (gameStartAckCount).ToString() });
                 return;
             }
@@ -377,23 +373,21 @@ namespace Hashbyte.Multiplayer
                 gameEvent.eventType = GameEventType.GAME_MOVE;
                 if (gameAlive == 2 && gameStartAckCount == 2)
                 {
-                    Debug.Log($"Both started at same time");
-                    gameEvent.data = "BothStarted same";
-                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
-                    if (IsHost) disconnectionHandler.SendPing();
+                    if (IsHost)
+                    {
+                        Debug.Log($"First Ping sent");
+                        disconnectionHandler.SendPing();
+                    }
                 }
                 else if (gameAlive == 2 && gameStartAckCount == 1)
                 {
                     Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
-                    gameEvent.data = $"{(IsHost ? "Host" : "Client")} started late";
-                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                     //I started late
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG });
                 }
                 else
                 {
-                    gameEvent.data = $"Something wrong happened {gameAlive},{gameStartAckCount}";
-                    multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
+                    Debug.Log($"Something wrong happened");
                 }
                 return;
             }
