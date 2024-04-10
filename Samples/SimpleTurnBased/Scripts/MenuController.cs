@@ -13,13 +13,11 @@ namespace Hashbyte.Multiplayer.Demo
         public TMPro.TextMeshProUGUI pingMessage;
         public UnityEngine.UI.Image networkIndicator;
         public bool isConnected;
-        public TextMeshProUGUI messageQueue;
-        private Hashtable seedOption;
+        public TextMeshProUGUI messageQueue;        
 
         async void Start()
         {
-            DeactivateAllPanels(null);
-            seedOption = new Hashtable { { "seed", System.Guid.NewGuid() } };
+            DeactivateAllPanels(null);            
             MultiplayerService.Instance.RegisterCallbacks(this);
             MultiplayerService.Instance.internetUtility.OnStatus += UpdateMessageQueue;
             await MultiplayerService.Instance.Initialize(playerId, null);
@@ -29,13 +27,13 @@ namespace Hashbyte.Multiplayer.Demo
         public void GUI_StartGame()
         {
             DeactivateAllPanels(lobbyPanel);
-            MultiplayerService.Instance.JoinOrCreateGame(seedOption);
+            MultiplayerService.Instance.JoinOrCreateGame(new Hashtable { { "seed", System.Guid.NewGuid() } });
         }
 
         public void CreatePrivateGame()
         {
             DeactivateAllPanels(lobbyPanel);
-            MultiplayerService.Instance.CreatePrivateGame(seedOption);
+            MultiplayerService.Instance.CreatePrivateGame(new Hashtable { { "seed", System.Guid.NewGuid() } });
         }
 
         public void GUI_JoinAsyncGame(TMPro.TMP_InputField passCodeField)
