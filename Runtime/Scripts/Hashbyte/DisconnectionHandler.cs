@@ -12,7 +12,8 @@ namespace Hashbyte.Multiplayer
         private GameEvent pong = new GameEvent() { eventType = GameEventType.PONG };
         private INetworkService network;
         private CancellationToken cancellationToken;
-        private const float eventTime = 2;
+        private const float eventTime = 3;
+        private int pingId, pongId;
 
         public delegate void DisconnectionEvents();
         public event DisconnectionEvents OnDisconnectedFromInternet, NoResponseFromOpponent, OpponentReconnected, OnReconnectedToInternet;
@@ -29,8 +30,9 @@ namespace Hashbyte.Multiplayer
             pongReceived = false;
             timeForNextPing = eventTime;
             DateTime startTime = DateTime.Now;
+            ping.data = pingId.ToString();
             network.SendMove(ping);
-            GameEvent gameEvent = new GameEvent() { eventType = GameEventType.GAME_ALIVE };
+            pingId++;
             while (!pongReceived && timeForNextPing > 0)
             {
                 await Task.Yield();
@@ -40,22 +42,27 @@ namespace Hashbyte.Multiplayer
             if (!pongReceived)
             {
                 Debug.Log($"Client not responded in 2 seconds, Checking my internet connection");
-                ((UnityNetService)network).ReceiveEvent("3:Resp Missing");
-                if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
-                {
-                    Debug.Log($"I am not connected to internet");
-                    ((UnityNetService)network).ReceiveEvent("3:No Internet");
-                    OnDisconnectedFromInternet?.Invoke();
-                    TryReconnecting();
-                }
-                else
-                {
-                    Debug.Log($"I am connected to internet, other player not connected");
-                    ((UnityNetService)network).ReceiveEvent("3:No Response");
-                    NoResponseFromOpponent?.Invoke();
-                }
+                await StartConnectionCheck();                
             }
 
+        }
+
+        private async Task StartConnectionCheck()
+        {
+            //((UnityNetService)network).ReceiveEvent("3:Resp Missing");
+            if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
+            {
+                Debug.Log($"I am not connected to internet");
+                //((UnityNetService)network).ReceiveEvent("3:No Internet");
+                OnDisconnectedFromInternet?.Invoke();
+                TryReconnecting();
+            }
+            else
+            {
+                Debug.Log($"I am connected to internet, other player connected {pongReceived}/{pingReceived}");
+                //((UnityNetService)network).ReceiveEvent("3:No Response");
+                NoResponseFromOpponent?.Invoke();
+            }
         }
 
         public async void CheckPing()
@@ -72,20 +79,7 @@ namespace Hashbyte.Multiplayer
             if (!pingReceived)
             {
                 Debug.Log($"Host not responded in 2 seconds, Checking my internet connection");
-                ((UnityNetService)network).ReceiveEvent("3:Resp Missing");
-                if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
-                {
-                    Debug.Log($"I am not connected to internet");
-                    ((UnityNetService)network).ReceiveEvent("3:No Internet");
-                    OnDisconnectedFromInternet?.Invoke();
-                    TryReconnecting();
-                }
-                else
-                {
-                    Debug.Log($"I am connected to internet, other player not connected");
-                    ((UnityNetService)network).ReceiveEvent("3:No Response");
-                    NoResponseFromOpponent?.Invoke();
-                }
+                await StartConnectionCheck();
             }
         }
 
@@ -120,19 +114,19 @@ namespace Hashbyte.Multiplayer
         {
             float waitTime = 60/*seconds*/;
             Debug.Log("Bakshish. Trying to reconnect");
-            ((UnityNetService)network).ReceiveEvent("3:Reconnecting");
+            //((UnityNetService)network).ReceiveEvent("3:Reconnecting");
             bool disconnected = true;
             while (waitTime > 0)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    ((UnityNetService)network).ReceiveEvent("3:CANCEL");
+                    //((UnityNetService)network).ReceiveEvent("3:CANCEL");
                     break;
                 }
                 await Task.Delay(200);
                 if (await MultiplayerService.Instance.internetUtility.IsConnectedToInternet() && !cancellationToken.IsCancellationRequested && waitTime > 0)
                 {
-                    ((UnityNetService)network).ReceiveEvent("3:Reconnected");
+                    //((UnityNetService)network).ReceiveEvent("3:Reconnected");
                     OnReconnectedToInternet?.Invoke();
                     disconnected = false;
                     network.SendMove(new GameEvent() { eventType = GameEventType.PLAYER_RECONNECTED });
@@ -144,12 +138,12 @@ namespace Hashbyte.Multiplayer
             {
                 //Resume game. Ping player for missed moves
                 Debug.Log("Bakshish. Reconnected to server. Will wait for other player acknowledgement");
-                ((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
+                //((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
                 await Task.Delay(2000);
                 if (!cancelReconnection)
                 {                    
                     Debug.Log("Bakshish. Reconnected to server. Relay Server Recovery");
-                    ((UnityNetService)network).ReceiveEvent("3:Recovery Started");
+                    //((UnityNetService)network).ReceiveEvent("3:Recovery Started");
                     await network.RecoverConnection();
                 }
                 else
