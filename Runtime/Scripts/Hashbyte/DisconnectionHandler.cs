@@ -1,3 +1,4 @@
+using Codice.CM.Client.Differences.Graphic;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,11 +49,11 @@ namespace Hashbyte.Multiplayer
             {
                 //Ping client and wait for response
                 ping.data = pingId.ToString();
-                Debug.Log("Ping sent to client");
+                //Debug.Log("Ping sent to client");
                 bool clientResponded = await PingClient();
                 if (clientResponded)
                 {
-                    Debug.Log($"Client responded, exiting");
+                    //Debug.Log($"Client responded, exiting");
                     break;
                 }
                 else
@@ -100,7 +101,7 @@ namespace Hashbyte.Multiplayer
             {
                 pongReceivedId = pongId;
                 pongReceived = true;
-                Debug.Log($"Pong: {data}");
+                //Debug.Log($"Pong: {data}");
                 //pingTask.Cancel();
                 //Resend ping to player to keep connection alive
                 HeartbeatClient();
@@ -137,6 +138,7 @@ namespace Hashbyte.Multiplayer
                     Debug.Log($"Ping not received in 2 seconds {waitCount}");
                     waitCount++;
                     if (!await CheckInternet()) break;
+                    Debug.Log($"Our internet is connected, sending ping again {pingCount}");
                 }
             }
             if (waitCount > 3)
@@ -146,7 +148,7 @@ namespace Hashbyte.Multiplayer
         }
 
 
-        public async void OnPing(string data)
+        public void OnPing(string data)
         {
             //Host sent us a ping, to confirm we are alive, send pong back
             pingReceived = true;
@@ -158,7 +160,7 @@ namespace Hashbyte.Multiplayer
                 //int randomDelay = UnityEngine.Random.Range(800, 7000);
                 //Debug.Log($"Will respond to ping {pingId} in {randomDelay}ms");
                 //await Task.Delay(randomDelay);
-                Debug.Log($"Ping received, sending Pong {data}");
+                //Debug.Log($"Ping received, sending Pong {data}");
                 pong.data = pingReceivedId.ToString();
                 network.SendMove(pong);
                 CheckPing();
