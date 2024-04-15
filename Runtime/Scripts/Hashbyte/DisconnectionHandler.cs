@@ -138,7 +138,7 @@ namespace Hashbyte.Multiplayer
                     Debug.Log($"Ping not received in 2 seconds {waitCount}");
                     waitCount++;
                     if (!await CheckInternet()) break;
-                    Debug.Log($"Our internet is connected, sending ping again {pingCount}");
+                    Debug.Log($"Our internet is connected, sending ping again {pingId}");
                 }
             }
             if (waitCount > 3)
