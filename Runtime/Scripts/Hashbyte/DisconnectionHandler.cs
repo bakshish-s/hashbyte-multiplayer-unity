@@ -1,4 +1,3 @@
-using Codice.CM.Client.Differences.Graphic;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
