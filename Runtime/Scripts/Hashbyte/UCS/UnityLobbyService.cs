@@ -179,7 +179,7 @@ namespace Hashbyte.Multiplayer
             gameRoom.isPrivateRoom = lobby.IsPrivate;
             foreach (string key in lobby.Data.Keys)
             {
-                Debug.Log($"Lobby has data {key} {lobby.Data[key].Value}");
+                //Debug.Log($"Lobby has data {key} {lobby.Data[key].Value}");
                 gameRoom.RoomOptions.Add(key, lobby.Data[key].Value);
             }
             for (int i = 0; i < lobby.Players.Count; i++)

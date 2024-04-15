@@ -131,7 +131,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomJoined(GameRoom room)
         {
-            Debug.Log($"Room joined succesfully");
+            //Debug.Log($"Room joined succesfully");
             if (room != null)
             {
                 waitingMessage.text = "Room Joined\n";
@@ -141,7 +141,7 @@ namespace Hashbyte.Multiplayer.Demo
                 OnMultiplayerRoomJoined();
                 foreach (string key in room.RoomOptions.Keys)
                 {
-                    Debug.Log($"Options in room {key} -- {room.RoomOptions[key]}");
+                    //Debug.Log($"Options in room {key} -- {room.RoomOptions[key]}");
                 }
                 if (room.isPrivateRoom)
                 {

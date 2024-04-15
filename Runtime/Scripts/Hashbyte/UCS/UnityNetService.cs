@@ -309,6 +309,7 @@ namespace Hashbyte.Multiplayer
                     cancellationTokenSource.Cancel();
                     cancellationTokenSource.Dispose();
                 }
+                disconnectionHandler.Dispose();
             }
             catch (ObjectDisposedException e)
             {
@@ -334,7 +335,7 @@ namespace Hashbyte.Multiplayer
                 //Reset gamestartcount so we do not send duplicate pong
                 gameStartAckCount = 0;
                 multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
-                disconnectionHandler.OnPing();
+                disconnectionHandler.OnPing(gameEvent.data);
                 return;
             }
             else if (gameEvent.eventType == GameEventType.PONG)
@@ -342,7 +343,7 @@ namespace Hashbyte.Multiplayer
                 //Reset gamestartcount so we do not send duplicate ping
                 gameStartAckCount = 0;
                 multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
-                disconnectionHandler.OnPong();
+                disconnectionHandler.OnPong(gameEvent.data);
                 return;
             }
             else if (gameEvent.eventType == GameEventType.PLAYER_RECONNECTED)
@@ -376,14 +377,14 @@ namespace Hashbyte.Multiplayer
                     if (IsHost)
                     {
                         Debug.Log($"First Ping sent");
-                        disconnectionHandler.SendPing();
+                        disconnectionHandler.HeartbeatClient();
                     }
                 }
                 else if (gameAlive == 2 && gameStartAckCount == 1)
                 {
                     Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
                     //I started late
-                    SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG });
+                    SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG, data = "1" });
                 }
                 else
                 {

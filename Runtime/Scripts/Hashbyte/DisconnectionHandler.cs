@@ -6,14 +6,23 @@ namespace Hashbyte.Multiplayer
 {
     internal class DisconnectionHandler
     {
-        private float timeForNextPing = 5;
+        private float waitTime;
         private bool pingReceived, pongReceived;
         private GameEvent ping = new GameEvent() { eventType = GameEventType.PING };
         private GameEvent pong = new GameEvent() { eventType = GameEventType.PONG };
         private INetworkService network;
         private CancellationToken cancellationToken;
-        private const float eventTime = 3;
-        private int pingId, pongId;
+        private const float timeBetweenPings = 2;
+        private const float maxTimeWithoutPing = 2;
+
+        #region Ping paramteres 
+        private DateTime startTime;
+        private CancellationTokenSource pingTask;
+        private int pingId;
+        private int pingReceivedId;
+        private int pongReceivedId;
+
+        #endregion
 
         public delegate void DisconnectionEvents();
         public event DisconnectionEvents OnDisconnectedFromInternet, NoResponseFromOpponent, OpponentReconnected, OnReconnectedToInternet;
@@ -22,90 +31,182 @@ namespace Hashbyte.Multiplayer
         {
             network = _network;
         }
-
-        public async void SendPing()
+        #region Host Ping System
+        public async void HeartbeatClient()
         {
-            //Wait one second before sending next ping
-            await Task.Delay(1000);
-            pongReceived = false;
-            timeForNextPing = eventTime;
-            DateTime startTime = DateTime.Now;
-            ping.data = pingId.ToString();
-            network.SendMove(ping);
+            //Wait half a second for things to reset before sending next heartbeat
+            int randomDelay = UnityEngine.Random.Range(800, 7000);
+            await Task.Delay(randomDelay);
             pingId++;
-            while (!pongReceived && timeForNextPing > 0)
+            if (pingTask == null || pingTask.IsCancellationRequested)
             {
-                await Task.Yield();
-                timeForNextPing = (float)(eventTime - (DateTime.Now - startTime).TotalSeconds);
+                pingTask = new CancellationTokenSource();
             }
-            //Either we are not connected or other player not connected to internet
-            if (!pongReceived)
+            pongReceived = false;
+            int pingCount = 1;
+            while (pingCount <= 3 && !pongReceived)
             {
-                Debug.Log($"Client not responded in 2 seconds, Checking my internet connection");
-                await StartConnectionCheck();                
+                //Ping client and wait for response
+                ping.data = pingId.ToString();
+                Debug.Log("Ping sent to client");
+                bool clientResponded = await PingClient();
+                if (clientResponded)
+                {
+                    Debug.Log($"Client responded, exiting");
+                    break;
+                }
+                else
+                {
+                    pingCount++;
+                    Debug.Log($"Client not responded in 2 seconds, checking internet");
+                    if (!await CheckInternet()) break;
+                    //Our internet is connected, try reaching client again
+                    Debug.Log($"Our internet is connected, sending ping again {pingCount}");
+                }
             }
-
-        }
-
-        private async Task StartConnectionCheck()
-        {
-            //((UnityNetService)network).ReceiveEvent("3:Resp Missing");
-            if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet())
+            //Client really not connected to internet
+            if (pingCount > 3)
             {
-                Debug.Log($"I am not connected to internet");
-                //((UnityNetService)network).ReceiveEvent("3:No Internet");
-                OnDisconnectedFromInternet?.Invoke();
-                TryReconnecting();
-            }
-            else
-            {
-                Debug.Log($"I am connected to internet, other player connected {pongReceived}/{pingReceived}");
-                //((UnityNetService)network).ReceiveEvent("3:No Response");
                 NoResponseFromOpponent?.Invoke();
             }
         }
 
-        public async void CheckPing()
+        private async Task<bool> PingClient()
         {
-            await Task.Delay(900);
-            pingReceived = false;
-            timeForNextPing = eventTime;
-            DateTime startTime = DateTime.Now;
-            while (!pingReceived && timeForNextPing > 0)
+            startTime = DateTime.Now;
+            waitTime = timeBetweenPings;
+            network.SendMove(ping);
+            while (!pongReceived && waitTime > 0 && !pingTask.IsCancellationRequested)
             {
                 await Task.Yield();
-                timeForNextPing = (float)(eventTime - (DateTime.Now - startTime).TotalSeconds);
+                waitTime = (float)(timeBetweenPings - (DateTime.Now - startTime).TotalSeconds);
             }
-            if (!pingReceived)
+            //Check if client responded
+            if (!pingTask.IsCancellationRequested)
             {
-                Debug.Log($"Host not responded in 2 seconds, Checking my internet connection");
-                await StartConnectionCheck();
+                if (pongReceived)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void OnPong(string data)
+        {
+
+            //Other player confirmed connected by sending pong back
+            int pongId = int.Parse(data);
+            if (pongId > pongReceivedId)
+            {
+                pongReceivedId = pongId;
+                pongReceived = true;
+                Debug.Log($"Pong: {data}");
+                //pingTask.Cancel();
+                //Resend ping to player to keep connection alive
+                HeartbeatClient();
+            }
+        }
+        #endregion
+
+        #region Client Ping System
+        public async void CheckPing()
+        {
+            await Task.Delay(200);
+            pingReceived = false;
+            if (pingTask == null || pingTask.IsCancellationRequested)
+            {
+                pingTask = new CancellationTokenSource();
+            }
+            int waitCount = 1;
+            while (waitCount <= 3 && !pingTask.IsCancellationRequested)
+            {
+                startTime = DateTime.Now;
+                waitTime = maxTimeWithoutPing;
+                while (!pingReceived && waitTime > 0 && !pingTask.IsCancellationRequested)
+                {
+                    await Task.Yield();
+                    waitTime = (float)(maxTimeWithoutPing - (DateTime.Now - startTime).TotalSeconds);
+                }
+                if (pingReceived)
+                {
+                    break;
+                }
+                else
+                {
+                    //Check internet connection
+                    Debug.Log($"Ping not received in 2 seconds {waitCount}");
+                    waitCount++;
+                    if (!await CheckInternet()) break;
+                }
+            }
+            if (waitCount > 3)
+            {
+                NoResponseFromOpponent?.Invoke();
             }
         }
 
-        public void OnPing()
+
+        public async void OnPing(string data)
         {
-            //Host sent us a ping, to confirm we are alive, send pong back                        
+            //Host sent us a ping, to confirm we are alive, send pong back
             pingReceived = true;
-            network.SendMove(pong);
-            CheckPing();
+            int pingId = int.Parse(data);
+            //Since same ping is sent three times in interval of 2 seconds, chances of packet loss are almost 0 if internet is connected
+            if (pingId > pingReceivedId)
+            {
+                pingReceivedId = pingId;
+                int randomDelay = UnityEngine.Random.Range(800, 7000);
+                Debug.Log($"Will respond to ping {pingId} in {randomDelay}ms");
+                await Task.Delay(randomDelay);
+                Debug.Log($"Ping received, sending Pong {data}");
+                pong.data = pingReceivedId.ToString();
+                network.SendMove(pong);
+                CheckPing();
+            }
+            //if(pingTask != null) pingTask.Cancel();
+
         }
-        public void OnPong()
+        #endregion
+
+        #region Common
+        private async Task<bool> CheckInternet()
         {
-            //Other player confirmed connected by sending pong back
-            pongReceived = true;
-            //Resend ping to player to keep connection alive
-            SendPing();
+            if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet(pingTask.Token))
+            {
+                //Either internet is not connected or pong received
+                if (pingTask.IsCancellationRequested)
+                {
+                    //We don't need to recover anything, we need to get out from here
+                    pingTask.Dispose();
+                    return false;
+                }
+                else
+                {
+                    //Internet is not connected
+                    OnDisconnectedFromInternet?.Invoke();
+                    TryReconnecting();
+                    pingTask.Dispose();
+                    return false;
+                }
+            }
+            else
+            {
+                return true;
+            }
         }
+        #endregion
+
+
 
         public void OnReconnected(bool isHost)
         {
             OpponentReconnected?.Invoke();
             //Other player reconnected, we establish ping again
-            if (isHost) SendPing();
+            if (isHost) HeartbeatClient();
             else
             {
                 pingReceived = true;
+                pong.data = pingReceivedId.ToString();
                 network.SendMove(pong);
             }
         }
@@ -141,7 +242,7 @@ namespace Hashbyte.Multiplayer
                 //((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
                 await Task.Delay(2000);
                 if (!cancelReconnection)
-                {                    
+                {
                     Debug.Log("Bakshish. Reconnected to server. Relay Server Recovery");
                     //((UnityNetService)network).ReceiveEvent("3:Recovery Started");
                     await network.RecoverConnection();
@@ -160,6 +261,12 @@ namespace Hashbyte.Multiplayer
         public void SetCancellationToken(CancellationToken token)
         {
             cancellationToken = token;
+        }
+
+        public void Dispose()
+        {
+            pingTask.Cancel();
+            pingTask.Dispose();
         }
     }
 }
