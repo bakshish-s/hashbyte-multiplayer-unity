@@ -35,8 +35,8 @@ namespace Hashbyte.Multiplayer
         public async void HeartbeatClient()
         {
             //Wait half a second for things to reset before sending next heartbeat
-            int randomDelay = UnityEngine.Random.Range(800, 7000);
-            await Task.Delay(randomDelay);
+            //int randomDelay = UnityEngine.Random.Range(800, 7000);
+            //await Task.Delay(randomDelay);
             pingId++;
             if (pingTask == null || pingTask.IsCancellationRequested)
             {
@@ -155,9 +155,9 @@ namespace Hashbyte.Multiplayer
             if (pingId > pingReceivedId)
             {
                 pingReceivedId = pingId;
-                int randomDelay = UnityEngine.Random.Range(800, 7000);
-                Debug.Log($"Will respond to ping {pingId} in {randomDelay}ms");
-                await Task.Delay(randomDelay);
+                //int randomDelay = UnityEngine.Random.Range(800, 7000);
+                //Debug.Log($"Will respond to ping {pingId} in {randomDelay}ms");
+                //await Task.Delay(randomDelay);
                 Debug.Log($"Ping received, sending Pong {data}");
                 pong.data = pingReceivedId.ToString();
                 network.SendMove(pong);
