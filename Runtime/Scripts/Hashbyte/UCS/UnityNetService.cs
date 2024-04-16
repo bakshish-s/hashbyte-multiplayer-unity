@@ -130,6 +130,12 @@ namespace Hashbyte.Multiplayer
             for (int i = 0; i < serverConnections.Length; i++)
             {
                 if (!serverConnections.IsCreated) continue;
+                if (serverConnections[i] == default(NetworkConnection))
+                {
+                    serverConnections.RemoveAt(i);
+                    --i;
+                    continue;
+                }
                 while ((eventType = driver.PopEventForConnection(serverConnections[i], out dataReader)) != NetworkEvent.Type.Empty)
                 {
                     ParseEvent();
@@ -222,7 +228,7 @@ namespace Hashbyte.Multiplayer
             }
             while ((incomingConnection = driver.Accept()) != default(NetworkConnection))
             {
-                Debug.Log($"Player joined with network ID {incomingConnection.InternalId}");
+                //Debug.Log($"Player joined with network ID {incomingConnection.InternalId}");
                 serverConnections.Add(incomingConnection);
                 multiplayerEvents.OnPlayerConnected();
                 cancellationTokenSource = new CancellationTokenSource();
@@ -236,10 +242,10 @@ namespace Hashbyte.Multiplayer
             {
                 // Handle Relay events.
                 case NetworkEvent.Type.Data:
-                   // Debug.Log($"Size of message received {dataReader.Length}");
+                    // Debug.Log($"Size of message received {dataReader.Length}");
                     if (dataReader.Length > 32)
                     {
-                        if(dataReader.Length > 64)
+                        if (dataReader.Length > 64)
                         {
                             Unity.Collections.FixedString128Bytes msg = dataReader.ReadFixedString128();
                             ReceiveEvent(msg.ToString());
@@ -278,13 +284,17 @@ namespace Hashbyte.Multiplayer
                             //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
                             Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
                             break;
-                        case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:
+                        case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:                            
                             Debug.Log($"Disconnection received. Max Attempts Received, Abandon game");
                             cancellationTokenSource?.Cancel();
                             //Abandon game ??
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote:
                             Debug.Log($"Disconnection received. Player left intentionally");
+                            if (IsHost)
+                            {                                
+                                serverConnections[0] = default(NetworkConnection);
+                            }                            
                             cancellationTokenSource?.Cancel();
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.Count:
@@ -308,8 +318,7 @@ namespace Hashbyte.Multiplayer
                 {
                     cancellationTokenSource.Cancel();
                     cancellationTokenSource.Dispose();
-                }
-                disconnectionHandler.Dispose();
+                }                
             }
             catch (ObjectDisposedException e)
             {
@@ -354,10 +363,10 @@ namespace Hashbyte.Multiplayer
             }
             else if (gameEvent.eventType == GameEventType.RECONNECTION_ACKNOWLEDGE)
             {
-                gameEvent.eventType = GameEventType.GAME_MOVE;
+                //gameEvent.eventType = GameEventType.GAME_MOVE;
                 gameEvent.data = "Reconnected To Server";
                 disconnectionHandler.cancelReconnection = true;
-                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
+                //multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
                 return;
             }
             else if (gameEvent.eventType == GameEventType.GAME_STARTED)
@@ -388,7 +397,7 @@ namespace Hashbyte.Multiplayer
                 }
                 else
                 {
-                    Debug.Log($"Something wrong happened");
+                    Debug.Log($"Something wrong happened {gameAlive}, {gameStartAckCount}");
                 }
                 return;
             }
@@ -406,6 +415,7 @@ namespace Hashbyte.Multiplayer
                 if (!serverConnections.IsCreated) return;
                 foreach (NetworkConnection connection in serverConnections)
                 {
+                    //Debug.Log($"Sending to connection {connection} -- {connection == default(NetworkConnection)}");
                     SendMoveToConnection(gameEvent, connection);
                 }
             }

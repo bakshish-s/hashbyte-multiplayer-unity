@@ -1,6 +1,5 @@
 using System.Collections;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 namespace Hashbyte.Multiplayer.Demo
 {
@@ -13,13 +12,19 @@ namespace Hashbyte.Multiplayer.Demo
         public TMPro.TextMeshProUGUI pingMessage;
         public UnityEngine.UI.Image networkIndicator;
         public bool isConnected;
-        public TextMeshProUGUI messageQueue;        
+        public TextMeshProUGUI messageQueue;
+        private static readonly string[] FirstNames = { "Alice", "Bob", "Charlie", "David", "Emma", "Frank", "Grace", "Henry", "Ivy", "Jack" };
+        private static readonly string[] LastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez" };
+        private static readonly System.Random random = new System.Random();
 
         async void Start()
         {
             DeactivateAllPanels(null);            
             MultiplayerService.Instance.RegisterCallbacks(this);
             MultiplayerService.Instance.internetUtility.OnStatus += UpdateMessageQueue;
+            string firstName = FirstNames[random.Next(FirstNames.Length)];
+            string lastName = LastNames[random.Next(LastNames.Length)];
+            playerId = $"{firstName}{lastName}";
             await MultiplayerService.Instance.Initialize(playerId, null);
             menuPanel.SetActive(true);
         }
@@ -62,7 +67,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnPlayerJoined(INetworkPlayer player)
         {
-            Debug.Log($"Player joined in MenuController");
+            //Debug.Log($"Player joined in MenuController");
             waitingMessage.text += $"<b>({player.ActorNumber}) {player.PlayerName}\n";
         }
 

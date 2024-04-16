@@ -270,7 +270,7 @@ namespace Hashbyte.Multiplayer
             List<INetworkPlayer> playerJoinedList = new List<INetworkPlayer>();
             foreach (LobbyPlayerJoined lobbyPlayer in playersJoined)
             {
-                Debug.Log($"Player Joined {lobbyPlayer.Player.Data[Constants.kPlayerName].Value}");
+                //Debug.Log($"Player Joined {lobbyPlayer.Player.Data[Constants.kPlayerName].Value}");
 
                 Hashtable playerData = new Hashtable();
                 foreach (string key in lobbyPlayer.Player.Data.Keys)

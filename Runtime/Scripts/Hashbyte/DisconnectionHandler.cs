@@ -17,7 +17,6 @@ namespace Hashbyte.Multiplayer
 
         #region Ping paramteres 
         private DateTime startTime;
-        private CancellationTokenSource pingTask;
         private int pingId;
         private int pingReceivedId;
         private int pongReceivedId;
@@ -36,34 +35,37 @@ namespace Hashbyte.Multiplayer
         {
             //Wait half a second for things to reset before sending next heartbeat
             //int randomDelay = UnityEngine.Random.Range(800, 7000);
-            //await Task.Delay(randomDelay);
+            await Task.Delay(200);
+            //Debug.Log($"Heartbeating");
             pingId++;
-            if (pingTask == null || pingTask.IsCancellationRequested)
-            {
-                pingTask = new CancellationTokenSource();
-            }
             pongReceived = false;
+            string timeE = pongReceivedId.ToString();
             int pingCount = 1;
-            while (pingCount <= 3 && !pongReceived)
+            while (pingCount <= 3 && !pongReceived && cancellationToken != null && !cancellationToken.IsCancellationRequested)
             {
                 //Ping client and wait for response
                 ping.data = pingId.ToString();
-                //Debug.Log("Ping sent to client");
+                //Debug.Log($"Ping sent to client {ping.data} {cancellationToken.IsCancellationRequested}");
                 bool clientResponded = await PingClient();
+                //Debug.Log($"Ping response {clientResponded}");
                 if (clientResponded)
                 {
-                    //Debug.Log($"Client responded, exiting");
                     break;
                 }
                 else
                 {
                     pingCount++;
-                    Debug.Log($"Client not responded in 2 seconds, checking internet");
-                    if (!await CheckInternet()) break;
+                    Debug.Log($"ThorHammer 2 seconds, checking internet {pongReceivedId}/{pingCount} - {timeE}");
+                    if (!await CheckInternet())
+                    {
+                        Debug.Log($"ThorHammer Our internet connection is not working");
+                        break;
+                    }
                     //Our internet is connected, try reaching client again
-                    Debug.Log($"Our internet is connected, sending ping again {pingCount}");
+                    Debug.Log($"ThorHammer Our internet is connected, sending ping again {pingCount} ");
                 }
             }
+            //Debug.Log($"Out of while loop {timeE}");
             //Client really not connected to internet
             if (pingCount > 3)
             {
@@ -76,13 +78,13 @@ namespace Hashbyte.Multiplayer
             startTime = DateTime.Now;
             waitTime = timeBetweenPings;
             network.SendMove(ping);
-            while (!pongReceived && waitTime > 0 && !pingTask.IsCancellationRequested)
+            while (!pongReceived && waitTime > 0 && cancellationToken != null && !cancellationToken.IsCancellationRequested)
             {
                 await Task.Yield();
                 waitTime = (float)(timeBetweenPings - (DateTime.Now - startTime).TotalSeconds);
             }
             //Check if client responded
-            if (!pingTask.IsCancellationRequested)
+            if (cancellationToken !=null && !cancellationToken.IsCancellationRequested)
             {
                 if (pongReceived)
                 {
@@ -112,17 +114,13 @@ namespace Hashbyte.Multiplayer
         public async void CheckPing()
         {
             await Task.Delay(200);
-            pingReceived = false;
-            if (pingTask == null || pingTask.IsCancellationRequested)
-            {
-                pingTask = new CancellationTokenSource();
-            }
+            pingReceived = false;           
             int waitCount = 1;
-            while (waitCount <= 3 && !pingTask.IsCancellationRequested)
+            while (waitCount <= 3 && cancellationToken != null && !cancellationToken.IsCancellationRequested)
             {
                 startTime = DateTime.Now;
                 waitTime = maxTimeWithoutPing;
-                while (!pingReceived && waitTime > 0 && !pingTask.IsCancellationRequested)
+                while (!pingReceived && waitTime > 0 && !cancellationToken.IsCancellationRequested)
                 {
                     await Task.Yield();
                     waitTime = (float)(maxTimeWithoutPing - (DateTime.Now - startTime).TotalSeconds);
@@ -134,10 +132,14 @@ namespace Hashbyte.Multiplayer
                 else
                 {
                     //Check internet connection
-                    Debug.Log($"Ping not received in 2 seconds {waitCount}");
+                    Debug.Log($"ThorHammer Ping not received in 2 seconds {waitCount}");
                     waitCount++;
-                    if (!await CheckInternet()) break;
-                    Debug.Log($"Our internet is connected, sending ping again {pingId}");
+                    if (!await CheckInternet())
+                    {
+                        Debug.Log($"ThorHammer: Our internet is not connected");
+                        break;
+                    }
+                    Debug.Log($"ThorHammer Our internet is connected, check for ping again {pingReceivedId}--{cancellationToken.IsCancellationRequested}");
                 }
             }
             if (waitCount > 3)
@@ -172,27 +174,33 @@ namespace Hashbyte.Multiplayer
         #region Common
         private async Task<bool> CheckInternet()
         {
-            if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet(pingTask.Token))
+            try
             {
-                //Either internet is not connected or pong received
-                if (pingTask.IsCancellationRequested)
+                if (!await MultiplayerService.Instance.internetUtility.IsConnectedToInternet(cancellationToken))
                 {
-                    //We don't need to recover anything, we need to get out from here
-                    pingTask.Dispose();
-                    return false;
+                    //Either internet is not connected or pong received
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        //We don't need to recover anything, we need to get out from here                        
+                        return false;
+                    }
+                    else
+                    {
+                        //Internet is not connected
+                        OnDisconnectedFromInternet?.Invoke();
+                        TryReconnecting();
+                        return false;
+                    }
                 }
                 else
                 {
-                    //Internet is not connected
-                    OnDisconnectedFromInternet?.Invoke();
-                    TryReconnecting();
-                    pingTask.Dispose();
-                    return false;
+                    return true;
                 }
             }
-            else
+            catch (ObjectDisposedException e)
             {
-                return true;
+                Debug.Log($"Already disposed " + e);
+                return false;
             }
         }
         #endregion
@@ -215,7 +223,7 @@ namespace Hashbyte.Multiplayer
         private async void TryReconnecting()
         {
             float waitTime = 60/*seconds*/;
-            Debug.Log("Bakshish. Trying to reconnect");
+            Debug.Log("ThorHammer: Trying to reconnect");
             //((UnityNetService)network).ReceiveEvent("3:Reconnecting");
             bool disconnected = true;
             while (waitTime > 0)
@@ -225,7 +233,7 @@ namespace Hashbyte.Multiplayer
                     //((UnityNetService)network).ReceiveEvent("3:CANCEL");
                     break;
                 }
-                await Task.Delay(200);
+                await Task.Delay(100);
                 if (await MultiplayerService.Instance.internetUtility.IsConnectedToInternet() && !cancellationToken.IsCancellationRequested && waitTime > 0)
                 {
                     //((UnityNetService)network).ReceiveEvent("3:Reconnected");
@@ -234,17 +242,17 @@ namespace Hashbyte.Multiplayer
                     network.SendMove(new GameEvent() { eventType = GameEventType.PLAYER_RECONNECTED });
                     break;
                 }
-                waitTime -= 0.2f;
+                waitTime -= 0.1f;
             }
             if (waitTime > 0 && !disconnected)
             {
                 //Resume game. Ping player for missed moves
-                Debug.Log("Bakshish. Reconnected to server. Will wait for other player acknowledgement");
+                Debug.Log("ThorHammer. Reconnected to server. Will wait for other player acknowledgement");
                 //((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
                 await Task.Delay(2000);
                 if (!cancelReconnection)
                 {
-                    Debug.Log("Bakshish. Reconnected to server. Relay Server Recovery");
+                    Debug.Log("ThorHammer. Reconnected to server. Relay Server Recovery");
                     //((UnityNetService)network).ReceiveEvent("3:Recovery Started");
                     await network.RecoverConnection();
                 }
@@ -255,19 +263,13 @@ namespace Hashbyte.Multiplayer
             }
             else if (waitTime <= 0)
             {
-                Debug.Log("No recovery available");
+                Debug.Log("ThorHammer: No recovery available");
             }
         }
         public bool cancelReconnection;
         public void SetCancellationToken(CancellationToken token)
         {
             cancellationToken = token;
-        }
-
-        public void Dispose()
-        {
-            pingTask.Cancel();
-            pingTask.Dispose();
-        }
+        }        
     }
 }

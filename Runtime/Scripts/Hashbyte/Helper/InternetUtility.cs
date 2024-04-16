@@ -37,12 +37,19 @@ namespace Hashbyte.Multiplayer
 
         public async Task<bool> IsConnectedToInternet(CancellationToken token = default)
         {
-            Debug.Log($"Checking internet");
             if (token == default) token = source.Token;
             //#1 Check Unity's in build internt check, if it returns false, we definitely not connected to internet
-            if (Application.internetReachability == NetworkReachability.NotReachable) return false;
+            if (Application.internetReachability == NetworkReachability.NotReachable)
+            {
+                Debug.Log($"ThorHammer: Checking internet (UNITY)");
+                return false;
+            }
             //#2 If Android plugin returns false, that ensures internet is not connected
-            else if (!IsInternallyConnected) return false;
+            else if (!IsInternallyConnected)
+            {
+                Debug.Log($"ThorHammer: Checking internet (PLUGIN)");
+                return false;
+            }
             else
             {
                 //OnStatus?.Invoke("Unity and Plugin Says Connected");
@@ -64,10 +71,12 @@ namespace Hashbyte.Multiplayer
                     if (ping.isDone && ping.time != -1)
                     {
                         OnStatus?.Invoke($"Ping {tryCount} returned success");
+                        Debug.Log($"ThorHammer: Ping {tryCount} returned success");
                         //We are connected to internet
                         return true;
                     }
                 }
+                Debug.Log($"ThorHammer: Ping failed {token.IsCancellationRequested}");
                 OnStatus?.Invoke($"Ping failed {token.IsCancellationRequested}");
             }
             return false;

@@ -259,7 +259,7 @@ namespace Hashbyte.Multiplayer
 
         public void JoinRoomResponse(IRoomResponse roomResponse)
         {
-            Debug.Log($"Room Join status {roomResponse.Success}");
+            //Debug.Log($"Room Join status {roomResponse.Success}");
             if (roomResponse.Success)
             {
                 CurrentRoom = roomResponse.Room;
