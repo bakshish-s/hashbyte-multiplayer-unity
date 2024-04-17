@@ -79,7 +79,7 @@ namespace Hashbyte.Multiplayer
             await Task.Delay(8000);
             if (cancelConnection)
             {
-                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(new GameEvent() { eventType = GameEventType.GAME_ENDED }));
+                multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(new GameEvent() { eventType = GameEventType.CONNECT_FAILED }));
                 MultiplayerService.Instance.LeaveRoom();
                 Debug.Log($"Host did not accept my connection, closing connection");
             }
@@ -387,6 +387,7 @@ namespace Hashbyte.Multiplayer
                     if (IsHost)
                     {
                         Debug.Log($"First Ping sent");
+                        disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
                 }
@@ -394,6 +395,7 @@ namespace Hashbyte.Multiplayer
                 {
                     Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
                     //I started late
+                    disconnectionHandler.stopPing = false;
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG, data = "1" });
                 }
                 else if(gameAlive == 1 && gameStartAckCount == 1)
@@ -402,10 +404,15 @@ namespace Hashbyte.Multiplayer
                     if(IsHost)
                     {
                         Debug.Log($"First Ping sent");
+                        disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
                 }
                 return;
+            }else if(gameEvent.eventType == GameEventType.GAME_ENDED)
+            {
+                //Stop ping until next game start
+                disconnectionHandler.stopPing = true;
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }

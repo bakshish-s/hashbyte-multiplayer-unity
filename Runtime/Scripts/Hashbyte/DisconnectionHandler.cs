@@ -14,7 +14,7 @@ namespace Hashbyte.Multiplayer
         private CancellationToken cancellationToken;
         private const float timeBetweenPings = 2;
         private const float maxTimeWithoutPing = 2;
-
+        public bool stopPing;
         #region Ping paramteres 
         private DateTime startTime;
         private int pingId;
@@ -33,6 +33,7 @@ namespace Hashbyte.Multiplayer
         #region Host Ping System
         public async void HeartbeatClient()
         {
+            if (stopPing) return;
             //Wait half a second for things to reset before sending next heartbeat
             //int randomDelay = UnityEngine.Random.Range(800, 7000);
             await Task.Delay(200);
@@ -47,6 +48,7 @@ namespace Hashbyte.Multiplayer
                 ping.data = pingId.ToString();
                 //Debug.Log($"Ping sent to client {ping.data} {cancellationToken.IsCancellationRequested}");
                 bool clientResponded = await PingClient();
+                if(stopPing) return;
                 //Debug.Log($"Ping response {clientResponded}");
                 if (clientResponded)
                 {
@@ -61,6 +63,7 @@ namespace Hashbyte.Multiplayer
                         Debug.Log($"ThorHammer Our internet connection is not working");
                         break;
                     }
+                    if (stopPing) return;
                     //Our internet is connected, try reaching client again
                     Debug.Log($"ThorHammer Our internet is connected, sending ping again {pingCount} ");
                 }
@@ -113,9 +116,11 @@ namespace Hashbyte.Multiplayer
         #region Client Ping System
         public async void CheckPing()
         {
+            if (stopPing) return;
             await Task.Delay(200);
             pingReceived = false;           
             int waitCount = 1;
+            if (stopPing) return;
             while (waitCount <= 3 && cancellationToken != null && !cancellationToken.IsCancellationRequested)
             {
                 startTime = DateTime.Now;
@@ -125,6 +130,7 @@ namespace Hashbyte.Multiplayer
                     await Task.Yield();
                     waitTime = (float)(maxTimeWithoutPing - (DateTime.Now - startTime).TotalSeconds);
                 }
+                if (stopPing) return;
                 if (pingReceived)
                 {
                     break;
@@ -139,6 +145,7 @@ namespace Hashbyte.Multiplayer
                         Debug.Log($"ThorHammer: Our internet is not connected");
                         break;
                     }
+                    if (stopPing) return;
                     Debug.Log($"ThorHammer Our internet is connected, check for ping again {pingReceivedId}--{cancellationToken.IsCancellationRequested}");
                 }
             }

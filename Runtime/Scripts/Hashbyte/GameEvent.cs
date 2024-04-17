@@ -35,6 +35,7 @@ namespace Hashbyte.Multiplayer
         PONG,
         PLAYER_RECONNECTED,
         RECONNECTION_ACKNOWLEDGE,
+        CONNECT_FAILED,
     }
 
     public enum DataSize
