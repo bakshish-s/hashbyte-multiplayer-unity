@@ -380,6 +380,7 @@ namespace Hashbyte.Multiplayer
                 int gameAlive = int.Parse(gameEvent.data);
                 //gameAlive = 2, ack = 1 (I started late, let's start ping or pong
                 //gameAlive = 2, ack = 2 (Both started at same time, host starts the game)
+                //gameAlive = 1, ack = 1 (Other player started late)
                 gameEvent.eventType = GameEventType.GAME_MOVE;
                 if (gameAlive == 2 && gameStartAckCount == 2)
                 {
@@ -395,9 +396,14 @@ namespace Hashbyte.Multiplayer
                     //I started late
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG, data = "1" });
                 }
-                else
+                else if(gameAlive == 1 && gameStartAckCount == 1)
                 {
-                    Debug.Log($"Something wrong happened {gameAlive}, {gameStartAckCount}");
+                    Debug.Log($"Other player started late");
+                    if(IsHost)
+                    {
+                        Debug.Log($"First Ping sent");
+                        disconnectionHandler.HeartbeatClient();
+                    }
                 }
                 return;
             }
