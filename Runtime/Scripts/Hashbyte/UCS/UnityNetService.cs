@@ -386,7 +386,7 @@ namespace Hashbyte.Multiplayer
                 {
                     if (IsHost)
                     {
-                        Debug.Log($"First Ping sent");
+                        Debug.Log($"First Ping Balanced");
                         disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
@@ -400,10 +400,10 @@ namespace Hashbyte.Multiplayer
                 }
                 else if(gameAlive == 1 && gameStartAckCount == 1)
                 {
-                    Debug.Log($"Other player started late");
+                    //Debug.Log($"Other player started late");
                     if(IsHost)
                     {
-                        Debug.Log($"First Ping sent");
+                        Debug.Log($"First Ping Late");
                         disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
@@ -413,6 +413,7 @@ namespace Hashbyte.Multiplayer
             {
                 //Stop ping until next game start
                 disconnectionHandler.stopPing = true;
+                Debug.Log($"Game Ended");
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
