@@ -46,9 +46,9 @@ namespace Hashbyte.Multiplayer
 
         public async Task Initialize(string playerId, Hashtable playerData)
         {
-            if (isInitialized) return;
             if (string.IsNullOrEmpty(playerId)) playerId = "Player_" + System.Guid.NewGuid().ToString();
             networkPlayer = new NetworkPlayer() { PlayerId = playerId, PlayerData = playerData};
+            if (isInitialized) return;
             await authService.AuthenticateWith(networkPlayer);
         }
 

@@ -210,6 +210,7 @@ namespace Hashbyte.Multiplayer
 
         private void CreateNetworkDriver(RelayServerData relayServerData)
         {
+            if (driver.IsCreated) driver.Dispose();
             NetworkSettings networkSettings = new NetworkSettings();
             networkSettings.WithRelayParameters(ref relayServerData);
             driver = NetworkDriver.Create(networkSettings);
