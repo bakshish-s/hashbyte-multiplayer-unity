@@ -63,11 +63,11 @@ namespace Hashbyte.Multiplayer
                     tryCount++;
                     OnStatus?.Invoke($"Ping {tryCount}");
                     Ping ping = new Ping("8.8.8.8");
-                    float timeout = 0;//3 seconds
+                    double timeout = 0;//3 seconds
                     System.DateTime currentTime = System.DateTime.Now;
                     while (!ping.isDone && timeout < 2000 && !token.IsCancellationRequested)
                     {
-                        timeout = (System.DateTime.Now - currentTime).Milliseconds;
+                        timeout = (System.DateTime.Now - currentTime).TotalMilliseconds;                        
                         await Task.Yield();
                     }
                     if (ping.isDone && ping.time != -1)
