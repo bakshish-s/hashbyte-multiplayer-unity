@@ -61,7 +61,7 @@ namespace Hashbyte.Multiplayer
                 while (tryCount < 2 && !token.IsCancellationRequested)
                 {
                     tryCount++;
-                    //OnStatus?.Invoke($"Ping {tryCount}");
+                    OnStatus?.Invoke($"Ping {tryCount}");
                     Ping ping = new Ping("8.8.8.8");
                     float timeout = 0;//3 seconds
                     System.DateTime currentTime = System.DateTime.Now;
@@ -77,6 +77,7 @@ namespace Hashbyte.Multiplayer
                         //We are connected to internet
                         return true;
                     }
+                    OnStatus?.Invoke($"Ping Completed {tryCount}");
                 }
                 //Debug.Log($"ThorHammer: Ping failed {token.IsCancellationRequested}");
                 OnStatus?.Invoke($"NO INTERNET PING {token.IsCancellationRequested}");
