@@ -31,7 +31,7 @@ namespace Hashbyte.Multiplayer
             }
             catch (RelayServiceException exception)
             {
-                Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
+                //Debug.Log($"Relay exception {exception.ErrorCode}, {exception.Message}");
                 return false;
             }
         }
@@ -46,7 +46,7 @@ namespace Hashbyte.Multiplayer
                 return true;
             }catch (RelayServiceException exception)
             {
-                Debug.Log($"Relay Exception while joining {exception.ErrorCode}, {exception.Message}");
+                //Debug.Log($"Relay Exception while joining {exception.ErrorCode}, {exception.Message}");
                 return false;
             }
         }

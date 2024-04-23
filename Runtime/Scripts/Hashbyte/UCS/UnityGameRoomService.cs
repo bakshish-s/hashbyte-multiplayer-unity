@@ -75,13 +75,13 @@ namespace Hashbyte.Multiplayer
             QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync();
             List<string> availableRooms = new List<string>();
             List<Lobby> availableLobbies = response.Results;
-            Debug.Log($"found rooms {availableLobbies.Count}");
+            //Debug.Log($"found rooms {availableLobbies.Count}");
             foreach (Lobby lobby in availableLobbies)
             {
                 if (lobby.Players.Count < 2)
                 {
-                    Debug.Log($"Adding rooms {lobby.LobbyCode} -- {lobby.Id} -- {lobby.Players.Count} --" +
-                        $"{lobby.MaxPlayers} -- {lobby.Data[Constants.kRoomId].Value}");
+                    //Debug.Log($"Adding rooms {lobby.LobbyCode} -- {lobby.Id} -- {lobby.Players.Count} --" +
+                        //$"{lobby.MaxPlayers} -- {lobby.Data[Constants.kRoomId].Value}");
                     availableRooms.Add(lobby.LobbyCode);
                 }
             }

@@ -40,15 +40,15 @@ namespace Hashbyte.Multiplayer
             CreateNetworkDriver(relayServerData);
             if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
-                Debug.Log("Failed to Bind to allocation");
+                //Debug.Log("Failed to Bind to allocation");
             }
             else if (driver.Listen() != 0)
             {
-                Debug.Log("Failed to listen to server");
+                //Debug.Log("Failed to listen to server");
             }
             else
             {
-                Debug.Log("Listening to server");
+                //Debug.Log("Listening to server");
                 serverConnections = new NativeList<NetworkConnection>(Constants.kMaxPlayers, Allocator.Persistent);
                 return true;
             }
@@ -61,11 +61,11 @@ namespace Hashbyte.Multiplayer
             CreateNetworkDriver(relayServerData);
             if (driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
             {
-                Debug.Log("Failed to Bind to allocation");
+                //Debug.Log("Failed to Bind to allocation");
             }
             else
             {
-                Debug.Log($"Asking Host to accept my connection");
+                //Debug.Log($"Asking Host to accept my connection");
                 clientConnection = driver.Connect();
                 ConnectionTimeout();
                 return true;
@@ -81,16 +81,16 @@ namespace Hashbyte.Multiplayer
             {
                 multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(new GameEvent() { eventType = GameEventType.CONNECT_FAILED }));
                 MultiplayerService.Instance.LeaveRoom();
-                Debug.Log($"Host did not accept my connection, closing connection");
+                //Debug.Log($"Host did not accept my connection, closing connection");
             }
         }
 
         public async Task RejoinClientAllocation(string allocationId)
         {
-            Debug.Log("Joining allocation again");
+            //Debug.Log("Joining allocation again");
             if (await UnityRelayService.Instance.JoinRelaySession(allocationId))
             {
-                Debug.Log("Allocation joined");
+                //Debug.Log("Allocation joined");
                 ConnectAsClient();
             }
         }
@@ -144,17 +144,17 @@ namespace Hashbyte.Multiplayer
         }
         public async Task RecoverConnection()
         {
-            Debug.Log("Disconnecting");
+            //Debug.Log("Disconnecting");
             ReceiveEvent("3:Disconnecting");
             await Disconnect();
             //We might still be in lobby, if we were host let's try to create new relay allocation and give it to other player using roomperoperties
             if (IsHost)
             {
-                Debug.Log("Creating new allocation now");
+                //Debug.Log("Creating new allocation now");
                 ReceiveEvent("3:Creating new allocation");
                 if (await UnityRelayService.Instance.CreateRelaySession())
                 {
-                    Debug.Log($"Allocation created");
+                    //Debug.Log($"Allocation created");
                     ReceiveEvent("3:Allocation created");
                     ConnectAsHost();
                     MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, UnityRelayService.Instance.JoinCode } });
@@ -163,11 +163,11 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                Debug.Log("Joining allocation again");
+                //Debug.Log("Joining allocation again");
                 ReceiveEvent("3:Join Allocation");
                 if (await UnityRelayService.Instance.JoinRelaySession(UnityRelayService.Instance.JoinCode))
                 {
-                    Debug.Log("Allocation joined");
+                    //Debug.Log("Allocation joined");
                     ReceiveEvent("3:Allocation Joined");
                     ConnectAsClient();
                 }
@@ -202,7 +202,7 @@ namespace Hashbyte.Multiplayer
             clientConnection.Close(driver);
             driver.Disconnect(clientConnection);
             driver.ScheduleUpdate().Complete();
-            Debug.Log($"Disconnected");
+            //Debug.Log($"Disconnected");
             clientConnection = default(NetworkConnection);
             await Task.Delay(500);
             Dispose();
@@ -222,7 +222,7 @@ namespace Hashbyte.Multiplayer
             {
                 if (!serverConnections[i].IsCreated)
                 {
-                    Debug.Log($"Removing stale connection");
+                    //Debug.Log($"Removing stale connection");
                     serverConnections.RemoveAt(i);
                     --i;
                 }
@@ -267,7 +267,7 @@ namespace Hashbyte.Multiplayer
 
                 // Handle Connect events.
                 case NetworkEvent.Type.Connect:
-                    Debug.Log("Player connected to the Host");
+                    //Debug.Log("Player connected to the Host");
                     cancelConnection = false;
                     cancellationTokenSource = new CancellationTokenSource();
                     disconnectionHandler.SetCancellationToken(cancellationTokenSource.Token);
@@ -283,15 +283,15 @@ namespace Hashbyte.Multiplayer
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.Timeout:
                             //We were disconnected for more than 10 seconds, relay allocation timedout. Try reconnecting
-                            Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
+                            //Debug.Log($"Disconnection received. Relay allocation timeout {driver.GetRelayConnectionStatus()}");
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts:                            
-                            Debug.Log($"Disconnection received. Max Attempts Received, Abandon game");
+                            //Debug.Log($"Disconnection received. Max Attempts Received, Abandon game");
                             cancellationTokenSource?.Cancel();
                             //Abandon game ??
                             break;
                         case Unity.Networking.Transport.Error.DisconnectReason.ClosedByRemote:
-                            Debug.Log($"Disconnection received. Player left intentionally");
+                            //Debug.Log($"Disconnection received. Player left intentionally");
                             if (IsHost)
                             {                                
                                 serverConnections[0] = default(NetworkConnection);
@@ -308,7 +308,7 @@ namespace Hashbyte.Multiplayer
         }
         public void Dispose()
         {
-            Debug.Log("Disposing");
+            //Debug.Log("Disposing");
             try
             {
                 if (serverConnections.IsCreated) serverConnections.Dispose();
@@ -387,14 +387,14 @@ namespace Hashbyte.Multiplayer
                 {
                     if (IsHost)
                     {
-                        Debug.Log($"First Ping Balanced");
+                        //Debug.Log($"First Ping Balanced");
                         disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
                 }
                 else if (gameAlive == 2 && gameStartAckCount == 1)
                 {
-                    Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
+                    //Debug.Log($"{(IsHost ? "Host" : "Client")} started late");
                     //I started late
                     disconnectionHandler.stopPing = false;
                     SendMove(new GameEvent() { eventType = IsHost ? GameEventType.PING : GameEventType.PONG, data = "1" });
@@ -404,7 +404,7 @@ namespace Hashbyte.Multiplayer
                     //Debug.Log($"Other player started late");
                     if(IsHost)
                     {
-                        Debug.Log($"First Ping Late");
+                        //Debug.Log($"First Ping Late");
                         disconnectionHandler.stopPing = false;
                         disconnectionHandler.HeartbeatClient();
                     }
@@ -414,7 +414,7 @@ namespace Hashbyte.Multiplayer
             {
                 //Stop ping until next game start
                 disconnectionHandler.stopPing = true;
-                Debug.Log($"Game Ended");
+                //Debug.Log($"Game Ended");
             }
             multiplayerEvents.GetTurnEventListeners().ForEach(eventListener => eventListener.OnNetworkMessage(gameEvent));
         }
@@ -467,7 +467,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                Debug.Log($"Send failed because of reason {statusOfSend}, Need to handle it");
+                //Debug.Log($"Send failed because of reason {statusOfSend}, Need to handle it");
             }
         }
     }

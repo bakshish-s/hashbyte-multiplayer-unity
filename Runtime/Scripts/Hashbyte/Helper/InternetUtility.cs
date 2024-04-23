@@ -77,7 +77,7 @@ namespace Hashbyte.Multiplayer
                         //We are connected to internet
                         return true;
                     }
-                    OnStatus?.Invoke($"Ping Completed {tryCount}");
+                    OnStatus?.Invoke($"Ping Completed {tryCount} {timeout}");
                 }
                 //Debug.Log($"ThorHammer: Ping failed {token.IsCancellationRequested}");
                 OnStatus?.Invoke($"NO INTERNET PING {token.IsCancellationRequested}");

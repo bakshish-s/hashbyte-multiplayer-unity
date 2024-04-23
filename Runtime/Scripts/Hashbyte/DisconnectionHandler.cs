@@ -57,15 +57,15 @@ namespace Hashbyte.Multiplayer
                 else
                 {
                     pingCount++;
-                    Debug.Log($"ThorHammer 2 seconds, checking internet {pongReceivedId}/{pingCount} - {timeE}");
+                    //Debug.Log($"ThorHammer 2 seconds, checking internet {pongReceivedId}/{pingCount} - {timeE}");
                     if (!await CheckInternet())
                     {
-                        Debug.Log($"ThorHammer Our internet connection is not working");
+                        //Debug.Log($"ThorHammer Our internet connection is not working");
                         break;
                     }
                     if (stopPing) return;
                     //Our internet is connected, try reaching client again
-                    Debug.Log($"ThorHammer Our internet is connected, sending ping again {pingCount} ");
+                    //Debug.Log($"ThorHammer Our internet is connected, sending ping again {pingCount} ");
                 }
             }
             //Debug.Log($"Out of while loop {timeE}");
@@ -138,15 +138,15 @@ namespace Hashbyte.Multiplayer
                 else
                 {
                     //Check internet connection
-                    Debug.Log($"ThorHammer Ping not received in 2 seconds {waitCount}");
+                    //Debug.Log($"ThorHammer Ping not received in 2 seconds {waitCount}");
                     waitCount++;
                     if (!await CheckInternet())
                     {
-                        Debug.Log($"ThorHammer: Our internet is not connected");
+                        //Debug.Log($"ThorHammer: Our internet is not connected");
                         break;
                     }
                     if (stopPing) return;
-                    Debug.Log($"ThorHammer Our internet is connected, check for ping again {pingReceivedId}--{cancellationToken.IsCancellationRequested}");
+                    //Debug.Log($"ThorHammer Our internet is connected, check for ping again {pingReceivedId}--{cancellationToken.IsCancellationRequested}");
                 }
             }
             if (waitCount > 3)
@@ -206,7 +206,7 @@ namespace Hashbyte.Multiplayer
             }
             catch (ObjectDisposedException e)
             {
-                Debug.Log($"Already disposed " + e);
+                //Debug.Log($"Already disposed " + e);
                 return false;
             }
         }
@@ -227,7 +227,7 @@ namespace Hashbyte.Multiplayer
         private async void TryReconnecting()
         {
             float waitTime = 60/*seconds*/;
-            Debug.Log("ThorHammer: Trying to reconnect");
+            //Debug.Log("ThorHammer: Trying to reconnect");
             //((UnityNetService)network).ReceiveEvent("3:Reconnecting");
             bool disconnected = true;
             while (waitTime > 0)
@@ -251,12 +251,12 @@ namespace Hashbyte.Multiplayer
             if (waitTime > 0 && !disconnected)
             {
                 //Resume game. Ping player for missed moves
-                Debug.Log("ThorHammer. Reconnected to server. Will wait for other player acknowledgement");
+                //Debug.Log("ThorHammer. Reconnected to server. Will wait for other player acknowledgement");
                 //((UnityNetService)network).ReceiveEvent("3:Ack Waiting");
                 await Task.Delay(2000);
                 if (!cancelReconnection)
                 {
-                    Debug.Log("ThorHammer. Reconnected to server. Relay Server Recovery");
+                    //Debug.Log("ThorHammer. Reconnected to server. Relay Server Recovery");
                     //((UnityNetService)network).ReceiveEvent("3:Recovery Started");
                     await network.RecoverConnection();
                 }
@@ -267,7 +267,7 @@ namespace Hashbyte.Multiplayer
             }
             else if (waitTime <= 0)
             {
-                Debug.Log("ThorHammer: No recovery available");
+                //Debug.Log("ThorHammer: No recovery available");
             }
         }
         public bool cancelReconnection;

@@ -124,7 +124,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomPropertiesUpdated(Hashtable roomProperties)
         {
-            Debug.Log("Room properties updated");
+            //Debug.Log("Room properties updated");
 
             //waitingMessage.text = "Players in game\n";
             //if (MultiplayerService.Instance.CurrentRoom == null) return;
@@ -210,7 +210,7 @@ namespace Hashbyte.Multiplayer.Demo
 
         public void OnRoomJoinFailed(FailureReason reason)
         {
-            Debug.Log("Invalid code");
+            //Debug.Log("Invalid code");
         }
     }
 }

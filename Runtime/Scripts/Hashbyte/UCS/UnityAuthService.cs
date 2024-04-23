@@ -14,7 +14,7 @@ namespace Hashbyte.Multiplayer
             //Initialize unity services
             await UnityServices.InitializeAsync();
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            Debug.Log($"User authenticated with ID {AuthenticationService.Instance.PlayerId}");
+            //Debug.Log($"User authenticated with ID {AuthenticationService.Instance.PlayerId}");
             IsInitialized = true;
         }
 
@@ -28,7 +28,7 @@ namespace Hashbyte.Multiplayer
                 options.SetProfile(networkPlayer.PlayerId);
                 await UnityServices.InitializeAsync(options);
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"User {AuthenticationService.Instance.PlayerName} authenticated with ID {AuthenticationService.Instance.PlayerId}");
+                //Debug.Log($"User {AuthenticationService.Instance.PlayerName} authenticated with ID {AuthenticationService.Instance.PlayerId}");
                 IsInitialized = true;
             }                
         }

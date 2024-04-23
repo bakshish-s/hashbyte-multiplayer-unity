@@ -52,7 +52,7 @@ namespace Hashbyte.Multiplayer
         {
             if (playersLeft.Count > 0)
             {
-                Debug.Log($"Players left {playersLeft[0]}");
+                //Debug.Log($"Players left {playersLeft[0]}");
                 OnPlayersLeft?.Invoke(playersLeft);
             }
         }
@@ -77,7 +77,7 @@ namespace Hashbyte.Multiplayer
                 Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(roomProperties[Constants.kPlayerName].ToString(), 2, options);
                 lobbyId = lobby.Id;
                 HeartbeatLobby();
-                Debug.Log($"Lobby {lobby.LobbyCode} {lobby.Id}");
+                //Debug.Log($"Lobby {lobby.LobbyCode} {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 IRoomResponse roomResponse = GetSuccessRoomResponse(lobby, true);
                 ((UnityRoomResponse)roomResponse).hostAllocation = relayResponse.hostAllocation;
@@ -85,7 +85,7 @@ namespace Hashbyte.Multiplayer
             }
             catch (LobbyServiceException ex)
             {
-                Debug.Log(ex.Reason.ToString());
+                //Debug.Log(ex.Reason.ToString());
                 return GetFailureRoomResponse(ex);
             }
         }
@@ -120,7 +120,7 @@ namespace Hashbyte.Multiplayer
             }
             catch (LobbyServiceException ex)
             {
-                Debug.Log(ex.Reason.ToString() + " " + ex.ErrorCode);
+                //Debug.Log(ex.Reason.ToString() + " " + ex.ErrorCode);
                 if (Enum.IsDefined(typeof(FailureReason), (int)ex.Reason))
                 {
                     OnJoinFailure?.Invoke((FailureReason)(int)ex.Reason);
@@ -141,7 +141,7 @@ namespace Hashbyte.Multiplayer
             }
             catch (LobbyServiceException ex)
             {
-                Debug.Log(ex.Reason.ToString());
+                //Debug.Log(ex.Reason.ToString());
                 return GetFailureRoomResponse(ex);
             }
         }
@@ -153,7 +153,7 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync(joinOptions);
-                Debug.Log($"Found Lobby {lobby.Id}");
+                //Debug.Log($"Found Lobby {lobby.Id}");
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobby.Id, this);
                 return GetSuccessRoomResponse(lobby, false);
             }
@@ -222,7 +222,7 @@ namespace Hashbyte.Multiplayer
             {
                 for (int i = 0; i < findLobbiesResponse.Results.Count; i++)
                 {
-                    Debug.Log($"Lobby found {findLobbiesResponse.Results[i].LobbyCode}");
+                    //Debug.Log($"Lobby found {findLobbiesResponse.Results[i].LobbyCode}");
                 }
             }
         }
@@ -257,7 +257,7 @@ namespace Hashbyte.Multiplayer
             try
             {
                 Lobby lobby = await LobbyService.Instance.UpdatePlayerAsync(lobbyId, playerId, options);
-                Debug.Log($"Lobby updated {lobby}");
+                //Debug.Log($"Lobby updated {lobby}");
             }
             catch (LobbyServiceException ex)
             {

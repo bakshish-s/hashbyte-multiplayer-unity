@@ -70,7 +70,7 @@ namespace Hashbyte.Multiplayer
 
         public async Task<IRoomResponse> JoinOrCreateGameAsync(Hashtable roomProperties = null)
         {
-            Debug.Log($"Auth Service initialization status {isInitialized}");
+            //Debug.Log($"Auth Service initialization status {isInitialized}");
             if (!isInitialized) await Initialize(null, null);
             if (roomProperties == null) roomProperties = new Hashtable() { { Constants.kPlayerName, networkPlayer.PlayerId } };
             else if (!roomProperties.ContainsKey(Constants.kPlayerName)) roomProperties.Add(Constants.kPlayerName, networkPlayer.PlayerId);
@@ -92,7 +92,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
+                //Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
             }
             return roomResponse;
         }
@@ -105,7 +105,7 @@ namespace Hashbyte.Multiplayer
             while (!isGameJoined && maxWaitTime > 0)
             {
                 int waitDelay = random.Next(20, 100);
-                Debug.Log($"Going to wait for {waitDelay} seconds");
+                //Debug.Log($"Going to wait for {waitDelay} seconds");
                 await Task.Delay(waitDelay * 100); //Wait for 2 seconds before trying to join a game
                 maxWaitTime -= waitDelay * 100;
                 if (isGameJoined)
@@ -141,13 +141,13 @@ namespace Hashbyte.Multiplayer
 
         public async void UpdateRoomPropertiesAsync(Hashtable roomData)
         {
-            Debug.Log("Updating room properties");
+            //Debug.Log("Updating room properties");
             roomData = await roomService.UpdateRoomProperties(CurrentRoom.LobbyId, roomData);
-            Debug.Log($"Room properties updated {roomData}");
+            //Debug.Log($"Room properties updated {roomData}");
             CurrentRoom.RoomOptions = roomData;
             foreach (string key in roomData.Keys)
             {
-                Debug.Log($"Lobby data updated {roomData[key]}");
+                //Debug.Log($"Lobby data updated {roomData[key]}");
             }
             foreach (INetworkEvents networkListener in networkListeners)
             {
@@ -193,7 +193,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
+                //Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
             }
             return roomResponse.Room.RoomId;
         }
@@ -213,7 +213,7 @@ namespace Hashbyte.Multiplayer
             }
             else
             {
-                Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
+                //Debug.Log($"Could not join or create room due to error {roomResponse.Error.Message}");
             }
             return roomResponse;
         }
@@ -237,7 +237,7 @@ namespace Hashbyte.Multiplayer
             //Check if this is a reconnection
             if (CurrentRoom.otherPlayerConnected)
             {
-                Debug.Log("Player Re-Connected");                
+                //Debug.Log("Player Re-Connected");                
                 foreach (INetworkEvents networkListener in networkListeners)
                 {
                     networkListener.OnPlayerReconnected();
@@ -246,7 +246,7 @@ namespace Hashbyte.Multiplayer
             else
             {
                 CurrentRoom.otherPlayerConnected = true;
-                Debug.Log("Player Connected");
+                //Debug.Log("Player Connected");
                 isGameJoined = true;
                 //Ready to start the game
                 foreach (INetworkEvents networkListener in networkListeners)
@@ -309,7 +309,7 @@ namespace Hashbyte.Multiplayer
 
         public void OnRoomDeleted()
         {
-            Debug.Log($"Room Deleted");
+            //Debug.Log($"Room Deleted");
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnRoomDeleted();
@@ -318,7 +318,7 @@ namespace Hashbyte.Multiplayer
 
         public void LostConnection()
         {
-            Debug.Log("Bakshish. Lost connection to internet, Try reconnecting");
+            //Debug.Log("Bakshish. Lost connection to internet, Try reconnecting");
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnConnectionStatusChange(false);
@@ -327,7 +327,7 @@ namespace Hashbyte.Multiplayer
 
         public void OtherPlayerNotResponding()
         {
-            Debug.Log("Bakshish. Other player not responding, wait for a few seconds before quitting match");
+            //Debug.Log("Bakshish. Other player not responding, wait for a few seconds before quitting match");
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnPlayerDisconnected();
@@ -345,7 +345,7 @@ namespace Hashbyte.Multiplayer
 
         public void OnOtherPlayerReconnected()
         {
-            Debug.Log("Bakshish. Other player rejoined match.");
+            //Debug.Log("Bakshish. Other player rejoined match.");
             foreach (INetworkEvents networkListener in networkListeners)
             {
                 networkListener.OnPlayerReconnected();
@@ -354,7 +354,7 @@ namespace Hashbyte.Multiplayer
 
         public void OnRoomDataUpdated(Hashtable data)
         {
-            Debug.Log($"Room data updated");
+            //Debug.Log($"Room data updated");
             if (data != null)
             {
                 foreach (INetworkEvents networkListener in networkListeners)
@@ -363,7 +363,7 @@ namespace Hashbyte.Multiplayer
                 }
                 if (data.ContainsKey(Constants.kRoomId))
                 {
-                    Debug.Log($"Room has been updated(Can only be done by host), Host has reconnected");
+                    //Debug.Log($"Room has been updated(Can only be done by host), Host has reconnected");
                     if (!CurrentRoom.isHost)
                     {
                         RejoinAllocation(data[Constants.kRoomId].ToString());
