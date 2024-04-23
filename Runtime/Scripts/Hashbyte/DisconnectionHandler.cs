@@ -36,7 +36,7 @@ namespace Hashbyte.Multiplayer
             if (stopPing) return;
             //Wait half a second for things to reset before sending next heartbeat
             //int randomDelay = UnityEngine.Random.Range(800, 7000);
-            await Task.Delay(200);
+            await Task.Delay(1000);
             //Debug.Log($"Heartbeating");
             pingId++;
             pongReceived = false;
@@ -117,7 +117,7 @@ namespace Hashbyte.Multiplayer
         public async void CheckPing()
         {
             if (stopPing) return;
-            await Task.Delay(200);
+            await Task.Delay(1000);
             pingReceived = false;           
             int waitCount = 1;
             if (stopPing) return;
@@ -211,9 +211,6 @@ namespace Hashbyte.Multiplayer
             }
         }
         #endregion
-
-
-
         public void OnReconnected(bool isHost)
         {
             OpponentReconnected?.Invoke();

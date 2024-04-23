@@ -38,7 +38,7 @@ namespace Hashbyte.Multiplayer
                     roomResponse = new UnityRoomResponse() { Success = false, Error = new RoomError() { Message = "Check log for more details" } };
                 multiplayerEventListener?.JoinRoomResponse(roomResponse);
             }
-            else
+            else if(roomResponse.Error.ErrorCode == 16006)
             {
                 roomResponse = await CreateRoom(false, roomProperties, playerProperties);
             }
