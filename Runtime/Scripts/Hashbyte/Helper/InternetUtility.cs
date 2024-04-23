@@ -46,19 +46,19 @@ namespace Hashbyte.Multiplayer
                 return false;
             }
             //#2 If Android plugin returns false, that ensures internet is not connected
-            else if (!IsInternallyConnected)
-            {
-                //Debug.Log($"ThorHammer: Checking internet (PLUGIN)");
-                OnStatus?.Invoke($"NO INTERNET PLUGIN");
-                return false;
-            }
+            //else if (!IsInternallyConnected)
+            //{
+            //    //Debug.Log($"ThorHammer: Checking internet (PLUGIN)");
+            //    OnStatus?.Invoke($"NO INTERNET PLUGIN");
+            //    return false;
+            //}
             else
             {
                 //OnStatus?.Invoke("Unity and Plugin Says Connected");
                 //Both Unity and Android plugin confirmed we are connected to internet
                 //We ensure internet is reachable with final step of pinging google dns
                 int tryCount = 0;
-                while (tryCount < 2 && !token.IsCancellationRequested)
+                while (tryCount < 3 && !token.IsCancellationRequested)
                 {
                     tryCount++;
                     OnStatus?.Invoke($"Ping {tryCount}");
