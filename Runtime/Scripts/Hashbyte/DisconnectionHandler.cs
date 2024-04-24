@@ -232,7 +232,7 @@ namespace Hashbyte.Multiplayer
             {
                 if (isHost)
                 {
-                    if (pongReceivedId == 0)
+                    //if (pongReceivedId == 0)
                     {
                         //Has not received pong
                         OnReconnected(isHost);
@@ -240,7 +240,7 @@ namespace Hashbyte.Multiplayer
                 }
                 else
                 {
-                    if (pingReceivedId == 0)
+                    //if (pingReceivedId == 0)
                     {
                         //Has not received ping
                         OnReconnected(isHost);
