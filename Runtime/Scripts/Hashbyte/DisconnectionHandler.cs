@@ -25,7 +25,7 @@ namespace Hashbyte.Multiplayer
 
         public delegate void DisconnectionEvents();
         public event DisconnectionEvents OnDisconnectedFromInternet, NoResponseFromOpponent, OpponentReconnected, OnReconnectedToInternet;
-
+        public bool opponentNotResponding;
         public DisconnectionHandler(INetworkService _network)
         {
             network = _network;
@@ -48,7 +48,7 @@ namespace Hashbyte.Multiplayer
                 ping.data = pingId.ToString();
                 //Debug.Log($"Ping sent to client {ping.data} {cancellationToken.IsCancellationRequested}");
                 bool clientResponded = await PingClient();
-                if(stopPing) return;
+                if (stopPing) return;
                 //Debug.Log($"Ping response {clientResponded}");
                 if (clientResponded)
                 {
@@ -72,6 +72,7 @@ namespace Hashbyte.Multiplayer
             //Client really not connected to internet
             if (pingCount > 3)
             {
+                opponentNotResponding = true;
                 NoResponseFromOpponent?.Invoke();
             }
         }
@@ -87,7 +88,7 @@ namespace Hashbyte.Multiplayer
                 waitTime = (float)(timeBetweenPings - (DateTime.Now - startTime).TotalSeconds);
             }
             //Check if client responded
-            if (cancellationToken !=null && !cancellationToken.IsCancellationRequested)
+            if (cancellationToken != null && !cancellationToken.IsCancellationRequested)
             {
                 if (pongReceived)
                 {
@@ -118,7 +119,7 @@ namespace Hashbyte.Multiplayer
         {
             if (stopPing) return;
             await Task.Delay(1000);
-            pingReceived = false;           
+            pingReceived = false;
             int waitCount = 1;
             if (stopPing) return;
             while (waitCount <= 3 && cancellationToken != null && !cancellationToken.IsCancellationRequested)
@@ -151,6 +152,7 @@ namespace Hashbyte.Multiplayer
             }
             if (waitCount > 3)
             {
+                opponentNotResponding = true;
                 NoResponseFromOpponent?.Invoke();
             }
         }
@@ -214,6 +216,7 @@ namespace Hashbyte.Multiplayer
         public void OnReconnected(bool isHost)
         {
             OpponentReconnected?.Invoke();
+            opponentNotResponding = false;
             //Other player reconnected, we establish ping again
             if (isHost) HeartbeatClient();
             else
@@ -223,7 +226,28 @@ namespace Hashbyte.Multiplayer
                 network.SendMove(pong);
             }
         }
-
+        public void StillAlive(bool isHost)
+        {
+            if (opponentNotResponding)
+            {
+                if (isHost)
+                {
+                    if (pongReceivedId == 0)
+                    {
+                        //Has not received pong
+                        OnReconnected(isHost);
+                    }
+                }
+                else
+                {
+                    if (pingReceivedId == 0)
+                    {
+                        //Has not received ping
+                        OnReconnected(isHost);
+                    }
+                }
+            }
+        }
         private async void TryReconnecting()
         {
             float waitTime = 60/*seconds*/;
@@ -274,6 +298,6 @@ namespace Hashbyte.Multiplayer
         public void SetCancellationToken(CancellationToken token)
         {
             cancellationToken = token;
-        }        
+        }
     }
 }

@@ -145,17 +145,17 @@ namespace Hashbyte.Multiplayer
         public async Task RecoverConnection()
         {
             //Debug.Log("Disconnecting");
-            ReceiveEvent("3:Disconnecting");
+            //ReceiveEvent("3:Disconnecting");
             await Disconnect();
             //We might still be in lobby, if we were host let's try to create new relay allocation and give it to other player using roomperoperties
             if (IsHost)
             {
                 //Debug.Log("Creating new allocation now");
-                ReceiveEvent("3:Creating new allocation");
+                //ReceiveEvent("3:Creating new allocation");
                 if (await UnityRelayService.Instance.CreateRelaySession())
                 {
                     //Debug.Log($"Allocation created");
-                    ReceiveEvent("3:Allocation created");
+                    //ReceiveEvent("3:Allocation created");
                     ConnectAsHost();
                     MultiplayerService.Instance.UpdateRoomProperties(new System.Collections.Hashtable() { { Constants.kRoomId, UnityRelayService.Instance.JoinCode } });
                 }
@@ -164,11 +164,11 @@ namespace Hashbyte.Multiplayer
             else
             {
                 //Debug.Log("Joining allocation again");
-                ReceiveEvent("3:Join Allocation");
+                //ReceiveEvent("3:Join Allocation");
                 if (await UnityRelayService.Instance.JoinRelaySession(UnityRelayService.Instance.JoinCode))
                 {
                     //Debug.Log("Allocation joined");
-                    ReceiveEvent("3:Allocation Joined");
+                    //ReceiveEvent("3:Allocation Joined");
                     ConnectAsClient();
                 }
             }
@@ -244,24 +244,9 @@ namespace Hashbyte.Multiplayer
                 // Handle Relay events.
                 case NetworkEvent.Type.Data:
                     // Debug.Log($"Size of message received {dataReader.Length}");
-                    if (dataReader.Length > 32)
-                    {
-                        if (dataReader.Length > 64)
-                        {
-                            Unity.Collections.FixedString128Bytes msg = dataReader.ReadFixedString128();
-                            ReceiveEvent(msg.ToString());
-                        }
-                        else
-                        {
-                            Unity.Collections.FixedString64Bytes msg = dataReader.ReadFixedString64();
-                            ReceiveEvent(msg.ToString());
-                        }
-                    }
-                    else
-                    {
-                        Unity.Collections.FixedString32Bytes msg = dataReader.ReadFixedString32();
-                        ReceiveEvent(msg.ToString());
-                    }
+                    FixedString128Bytes msg = dataReader.Length <= 32 ? dataReader.ReadFixedString32() :
+                        (dataReader.Length <= 64 ? dataReader.ReadFixedString64() : dataReader.ReadFixedString128());                        ;
+                    ReceiveEvent(msg.ToString());
                     //Debug.Log($"Player received msg: {msg}");
                     break;
 
@@ -329,6 +314,7 @@ namespace Hashbyte.Multiplayer
 
         public virtual void ReceiveEvent(string eventData)
         {
+            disconnectionHandler?.StillAlive(IsHost);
             GameEvent gameEvent = new GameEvent();
             string[] eventSplit = eventData.Split(':');
             if (eventSplit.Length > 0)
